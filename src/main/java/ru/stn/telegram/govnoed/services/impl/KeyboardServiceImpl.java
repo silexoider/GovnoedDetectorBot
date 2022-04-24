@@ -30,8 +30,11 @@ public class KeyboardServiceImpl implements KeyboardService {
         List<List<InlineKeyboardButton>> rows = Arrays.asList(
                 Arrays.asList(
                         createInlineKeyboardButton("Меню", "/menu"),
-                        createInlineKeyboardButton("Отозвать", "/revoke"),
                         createInlineKeyboardButton("Победитель", "/winner")
+                ),
+                Arrays.asList(
+                        createInlineKeyboardButton("Мой голос", "/vote"),
+                        createInlineKeyboardButton("Отозвать голос", "/revoke")
                 )
         );
         return new InlineKeyboardMarkup(rows);
