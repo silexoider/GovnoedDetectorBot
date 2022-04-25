@@ -12,7 +12,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-public abstract class BaseReplyService<T extends BaseReplyService.Entry> implements ReplyService<T> {
+public abstract class BaseReplyServiceImpl<T extends BaseReplyServiceImpl.Entry> implements ReplyService<T> {
     @FunctionalInterface
     protected interface EntryFunction<T extends Entry> {
         BotApiMethod<?> apply(Bot bot, Instant instant, Chat chat, User sender, Message reply, T entry, ResourceBundle resourceBundle) throws TelegramApiException;

@@ -19,9 +19,9 @@ import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
-public class MessageServiceImpl extends BaseReplyService<MessageServiceImpl.Entry> implements MessageService {
+public class MessageServiceImpl extends BaseReplyServiceImpl<MessageServiceImpl.Entry> implements MessageService {
     @RequiredArgsConstructor
-    public static class Entry implements BaseReplyService.Entry {
+    public static class Entry implements BaseReplyServiceImpl.Entry {
         private final String value;
 
         @Override

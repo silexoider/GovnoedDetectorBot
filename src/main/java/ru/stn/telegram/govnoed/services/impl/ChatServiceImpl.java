@@ -6,6 +6,8 @@ import ru.stn.telegram.govnoed.entities.Chat;
 import ru.stn.telegram.govnoed.repositories.ChatRepository;
 import ru.stn.telegram.govnoed.services.ChatService;
 
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Optional;
@@ -46,5 +48,10 @@ public class ChatServiceImpl implements ChatService {
                         ZoneId.of("UTC")
                         :
                         chat.getTimezone();
+    }
+
+    @Override
+    public LocalDate instantToDate(long chatId, Instant instant) {
+        return instant.atZone(getTimezoneById(chatId)).toLocalDate();
     }
 }

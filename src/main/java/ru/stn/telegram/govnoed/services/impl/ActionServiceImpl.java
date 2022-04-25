@@ -31,6 +31,7 @@ public class ActionServiceImpl implements ActionService {
     private final ChatMemberService chatMemberService;
     private final KeyboardService keyboardService;
     private final FormatService formatService;
+    private final LocalizationService localizationService;
 
     private SendMessage createSendMessage(Chat chat, String text) {
         SendMessage sendMessage = new SendMessage(chat.getId().toString(), text);
@@ -40,7 +41,7 @@ public class ActionServiceImpl implements ActionService {
 
     @Override
     public BotApiMethod<?> showMenu(Chat chat, ResourceBundle resourceBundle) {
-        SendMessage sendMessage = createSendMessage(chat, resourceBundle.getString("menu_message"));
+        SendMessage sendMessage = createSendMessage(chat, localizationService.getMenuMessage(resourceBundle));
         sendMessage.setReplyMarkup(keyboardService.createInlineKeyboard());
         return sendMessage;
     }
@@ -49,9 +50,9 @@ public class ActionServiceImpl implements ActionService {
         ru.stn.telegram.govnoed.entities.Chat chatEntity = chatService.findById(chat.getId());
         String text =
                 chatEntity == null ?
-                        resourceBundle.getString("view_zone_absent_message")
+                        localizationService.getViewZoneAbsentMessage(resourceBundle)
                         :
-                        String.format(resourceBundle.getString("view_zone_exists_message"), chatEntity.getTimezone());
+                        String.format(localizationService.getViewZoneExistsMessage(resourceBundle), chatEntity.getTimezone());
         return createSendMessage(chat, text);
     }
     @Override
@@ -60,19 +61,19 @@ public class ActionServiceImpl implements ActionService {
         try {
             ChatMember chatMember = bot.execute(new GetChatMember(chat.getId().toString(), sender.getId()));
             if (!chat.getType().equals("private") && !Arrays.asList("creator", "administrator").contains(chatMember.getStatus())) {
-                throw new RuntimeException(resourceBundle.getString("zone_action_failure_insufficient_privileges_message"));
+                throw new RuntimeException(localizationService.getZoneActionFailureInsufficientPrivilegesMessage(resourceBundle));
             }
             ZoneId timezone;
             try {
                 timezone = ZoneId.of(text);
             } catch (Exception e) {
-                throw new RuntimeException(String.format(resourceBundle.getString("zone_action_failure_invalid_timezone_message"), text), e);
+                throw new RuntimeException(String.format(localizationService.getZoneActionFailureInvalidTimezoneMessage(resourceBundle), text), e);
             }
             chatService.setTimezone(chat.getId(), timezone);
-            result = String.format(resourceBundle.getString("zone_action_success_message"), timezone);
+            result = String.format(localizationService.getZoneActionSuccessMessage(resourceBundle), timezone);
 
         } catch (Exception e) {
-            result = String.format(resourceBundle.getString("zone_action_failure_message"), e.getMessage());
+            result = String.format(localizationService.getZoneActionFailureMessage(resourceBundle), e.getMessage());
         }
         return createSendMessage(chat, result);
     }
@@ -84,9 +85,9 @@ public class ActionServiceImpl implements ActionService {
             return createSendMessage(
                     chat,
                     String.format(
-                        resourceBundle.getString("vote_action_invalid_date_message"),
-                        formatService.getDateEntry(replyDate),
-                        formatService.getDateEntry(date)
+                            localizationService.getVoteActionInvalidDateMessage(resourceBundle),
+                            formatService.getDateEntry(replyDate),
+                            formatService.getDateEntry(date)
                     )
             );
         }
@@ -94,13 +95,13 @@ public class ActionServiceImpl implements ActionService {
         String text;
         if (success) {
             text = String.format(
-                    resourceBundle.getString("vote_action_message"),
+                    localizationService.getVoteActionMessage(resourceBundle),
                     formatService.getUserString(sender, resourceBundle),
                     formatService.getUserString(nominee, resourceBundle)
             );
         } else {
             text = String.format(
-                    resourceBundle.getString("vote_action_denied_message"),
+                    localizationService.getVoteActionDeniedMessage(resourceBundle),
                     formatService.getUserString(sender, resourceBundle),
                     formatService.getDateEntry(date)
             );
@@ -112,7 +113,7 @@ public class ActionServiceImpl implements ActionService {
         Vote vote = voteService.getVote(date, sender.getId(), chat.getId());
         String nomineeText;
         if (vote == null) {
-            nomineeText = resourceBundle.getString("view_vote_message_not_voted");
+            nomineeText = localizationService.getViewVoteMessageNotVoted(resourceBundle);
         } else {
             User nominee = chatMemberService.getChatMemberUser(bot, chat, vote.getNomineeId());
             nomineeText = formatService.getUserString(nominee, resourceBundle);
@@ -120,18 +121,17 @@ public class ActionServiceImpl implements ActionService {
         return createSendMessage(
                 chat,
                 String.format(
-                    resourceBundle.getString("view_vote_message"),
-                    formatService.getUserString(sender, resourceBundle),
-                    formatService.getDateEntry(date),
-                    nomineeText
+                        localizationService.getViewVoteMessage(resourceBundle),
+                        formatService.getUserString(sender, resourceBundle),
+                        formatService.getDateEntry(date),
+                        nomineeText
                 )
         );
     }
     @Override
-    public BotApiMethod<?> revoke(Instant instant, Chat chat, User sender, ResourceBundle resourceBundle) {
-        LocalDate date = instant.atZone(chatService.getTimezoneById(chat.getId())).toLocalDate();
+    public BotApiMethod<?> revoke(LocalDate date, Chat chat, User sender, ResourceBundle resourceBundle) {
         boolean success = voteService.revoke(date, sender.getId(), chat.getId());
-        String textFormat = success ? resourceBundle.getString("revoke_message") : resourceBundle.getString("unable_to_revoke_message");
+        String textFormat = success ? localizationService.getRevokeMessage(resourceBundle) : localizationService.getUnableToRevokeMessage(resourceBundle);
         String text = String.format(textFormat, formatService.getUserString(sender, resourceBundle));
         return createSendMessage(
                 chat,
@@ -139,32 +139,30 @@ public class ActionServiceImpl implements ActionService {
         );
     }
     @Override
-    public BotApiMethod<?> showWinners(Bot bot, Instant instant, Chat chat, ResourceBundle resourceBundle) {
-        LocalDate date = instant.atZone(chatService.getTimezoneById(chat.getId())).toLocalDate();
+    public BotApiMethod<?> showWinners(Bot bot, LocalDate date, Chat chat, ResourceBundle resourceBundle) {
         VoteService.Winners winners = voteService.winners(date, chat.getId());
         List<User> winnerUsers = winners.getIds().stream().map(id -> chatMemberService.getChatMemberUserUnchecked(bot, chat, id)).collect(Collectors.toList());
         String text = null;
         String dateText = formatService.getDateEntry(date);
         if (winnerUsers.size() == 0) {
-            text = String.format(resourceBundle.getString("no_winner_message"), dateText);
+            text = String.format(localizationService.getNoWinnerMessage(resourceBundle), dateText);
         }
         if (winnerUsers.size() == 1) {
             User winner = winnerUsers.get(0);
-            text = String.format(resourceBundle.getString("single_winner_message"), dateText, winners.getScore(), formatService.getUserString(winner, resourceBundle));
+            text = String.format(localizationService.getSingleWinnerMessage(resourceBundle), dateText, winners.getScore(), formatService.getUserString(winner, resourceBundle));
         }
         if (winnerUsers.size() > 1) {
-            text = String.format(resourceBundle.getString("multiple_winners_message"), dateText, winners.getScore(), formatService.usersToString(winnerUsers, resourceBundle));
+            text = String.format(localizationService.getMultipleWinnersMessage(resourceBundle), dateText, winners.getScore(), formatService.usersToString(winnerUsers, resourceBundle));
         }
         return createSendMessage(
                 chat,
                 text
         );
     }
-    public BotApiMethod<?> showScores(Bot bot, Instant instant, Chat chat, ResourceBundle resourceBundle) {
-        LocalDate date = instant.atZone(chatService.getTimezoneById(chat.getId())).toLocalDate();
+    public BotApiMethod<?> showScores(Bot bot, LocalDate date, Chat chat, ResourceBundle resourceBundle) {
         List<VoteService.Score> scores = voteService.scores(date, chat.getId());
-        StringBuilder text = new StringBuilder(resourceBundle.getString("scores_message"));
-        String entryFormat = resourceBundle.getString("scores_entry");
+        StringBuilder text = new StringBuilder(localizationService.getScoresMessage(resourceBundle));
+        String entryFormat = localizationService.getScoresEntry(resourceBundle);
         for (VoteService.Score score : scores) {
             User user = chatMemberService.getChatMemberUser(bot, chat, score.getUserId());
             text.append(

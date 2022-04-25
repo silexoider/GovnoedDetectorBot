@@ -1,10 +1,12 @@
 package ru.stn.telegram.govnoed.services.impl;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.User;
 import ru.stn.telegram.govnoed.services.FormatService;
+import ru.stn.telegram.govnoed.services.LocalizationService;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -15,7 +17,9 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 @Service
+@RequiredArgsConstructor
 public class FormatServiceImpl implements FormatService {
+    private final LocalizationService localizationService;
 
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private final DateTimeFormatter instantFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
@@ -83,8 +87,8 @@ public class FormatServiceImpl implements FormatService {
     public String getUserString(User user, ResourceBundle resourceBundle) {
         return
                 user == null ?
-                        resourceBundle.getString("show_absent_user_message")
+                        localizationService.getShowAbsentUserMessage(resourceBundle)
                         :
-                        String.format(resourceBundle.getString("show_present_user_message"), user.getId(), getUserName(user));
+                        String.format(localizationService.getShowPresentUserMessage(resourceBundle), user.getId(), getUserName(user));
     }
 }

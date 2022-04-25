@@ -1,35 +1,28 @@
 package ru.stn.telegram.govnoed.services.impl;
 
-import com.google.common.util.concurrent.UncheckedExecutionException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
-import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.User;
-import org.telegram.telegrambots.meta.api.objects.chatmember.*;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import ru.stn.telegram.govnoed.entities.Vote;
 import ru.stn.telegram.govnoed.services.*;
 import ru.stn.telegram.govnoed.telegram.Bot;
 import ru.stn.telegram.govnoed.config.TelegramConfig;
 
 import java.time.*;
 import java.util.*;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class CommandServiceImpl extends BaseReplyService<CommandServiceImpl.Command> implements CommandService  {
+public class CommandServiceImpl extends BaseReplyServiceImpl<CommandServiceImpl.Command> implements CommandService  {
     @Getter
     @RequiredArgsConstructor
-    public static class Command implements BaseReplyService.Entry {
+    public static class Command implements BaseReplyServiceImpl.Entry {
         private final String name;
         private final String bot;
         private final List<String> args;
@@ -67,13 +60,13 @@ public class CommandServiceImpl extends BaseReplyService<CommandServiceImpl.Comm
                         actionService.vote(date, chat, sender, reply, resourceBundle);
     }
     private BotApiMethod<?> revoke(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) {
-        return actionService.revoke(instant, chat ,sender, resourceBundle);
+        return actionService.revoke(chatService.instantToDate(chat.getId(), instant), chat ,sender, resourceBundle);
     }
     private BotApiMethod<?> winner(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) {
-        return actionService.showWinners(bot, instant, chat, resourceBundle);
+        return actionService.showWinners(bot, chatService.instantToDate(chat.getId(), instant), chat, resourceBundle);
     }
     private BotApiMethod<?> scores(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) {
-        return actionService.showScores(bot, instant, chat, resourceBundle);
+        return actionService.showScores(bot, chatService.instantToDate(chat.getId(), instant), chat, resourceBundle);
     }
 
     private Command parse(String text) {
@@ -107,7 +100,7 @@ public class CommandServiceImpl extends BaseReplyService<CommandServiceImpl.Comm
 
     @Override
     protected Map<String, EntryFunction<Command>> createEntryHandlers() {
-        return new HashMap<String, BaseReplyService.EntryFunction<Command>>() {{
+        return new HashMap<String, BaseReplyServiceImpl.EntryFunction<Command>>() {{
             put("start", CommandServiceImpl.this::menu);
             put("menu", CommandServiceImpl.this::menu);
             put("zone", CommandServiceImpl.this::zone);
