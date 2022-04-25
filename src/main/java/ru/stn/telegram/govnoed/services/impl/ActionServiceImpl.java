@@ -1,6 +1,5 @@
 package ru.stn.telegram.govnoed.services.impl;
 
-import com.google.common.util.concurrent.UncheckedExecutionException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
@@ -10,7 +9,6 @@ import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.stn.telegram.govnoed.entities.Vote;
 import ru.stn.telegram.govnoed.services.*;
 import ru.stn.telegram.govnoed.telegram.Bot;
@@ -109,7 +107,7 @@ public class ActionServiceImpl implements ActionService {
         return createSendMessage(chat, text);
     }
     @Override
-    public BotApiMethod<?> showVote(Bot bot, LocalDate date, Chat chat, User sender, ResourceBundle resourceBundle) throws TelegramApiException {
+    public BotApiMethod<?> showVote(Bot bot, LocalDate date, Chat chat, User sender, ResourceBundle resourceBundle) {
         Vote vote = voteService.getVote(date, sender.getId(), chat.getId());
         String nomineeText;
         if (vote == null) {
@@ -133,10 +131,7 @@ public class ActionServiceImpl implements ActionService {
         boolean success = voteService.revoke(date, sender.getId(), chat.getId());
         String textFormat = success ? localizationService.getRevokeMessage(resourceBundle) : localizationService.getUnableToRevokeMessage(resourceBundle);
         String text = String.format(textFormat, formatService.getUserString(sender, resourceBundle));
-        return createSendMessage(
-                chat,
-                text
-        );
+        return createSendMessage(chat, text);
     }
     @Override
     public BotApiMethod<?> showWinners(Bot bot, LocalDate date, Chat chat, ResourceBundle resourceBundle) {
@@ -154,10 +149,7 @@ public class ActionServiceImpl implements ActionService {
         if (winnerUsers.size() > 1) {
             text = String.format(localizationService.getMultipleWinnersMessage(resourceBundle), dateText, winners.getScore(), formatService.usersToString(winnerUsers, resourceBundle));
         }
-        return createSendMessage(
-                chat,
-                text
-        );
+        return createSendMessage(chat, text);
     }
     public BotApiMethod<?> showScores(Bot bot, LocalDate date, Chat chat, ResourceBundle resourceBundle) {
         List<VoteService.Score> scores = voteService.scores(date, chat.getId());
