@@ -26,18 +26,18 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class CommandServiceImpl implements CommandService {
-    @FunctionalInterface
-    private interface CommandFunction {
-        BotApiMethod<?> apply(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) throws TelegramApiException;
-    }
-
+public class CommandServiceImpl extends BaseReplyService<CommandServiceImpl.Command> implements CommandService  {
     @Getter
     @RequiredArgsConstructor
-    private static class Command {
+    public static class Command implements BaseReplyService.Entry {
         private final String name;
         private final String bot;
         private final List<String> args;
+
+        @Override
+        public String getKey() {
+            return name;
+        }
     }
 
     private final TelegramConfig config;
@@ -46,15 +46,6 @@ public class CommandServiceImpl implements CommandService {
 
     private final Pattern mainPattern = Pattern.compile("^ */(?<name>[A-Za-z0-9_]+)(@(?<bot>[A-Za-z0-9_]+))?(?<args>( +([^ ]+))+)? *$");
     private final Pattern argsPattern = Pattern.compile(" +(?<arg>[^ ]+)");
-
-    private final Map<String, CommandFunction> commandHandlers = new HashMap<String, CommandFunction>() {{
-        put("start", CommandServiceImpl.this::menu);
-        put("menu", CommandServiceImpl.this::menu);
-        put("zone", CommandServiceImpl.this::zone);
-        put("vote", CommandServiceImpl.this::vote);
-        put("revoke", CommandServiceImpl.this::revoke);
-        put("winner", CommandServiceImpl.this::winner);
-    }};
 
     private BotApiMethod<?> menu(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) {
         return actionService.showMenu(chat, resourceBundle);
@@ -82,23 +73,6 @@ public class CommandServiceImpl implements CommandService {
         return actionService.showWinners(bot, instant, chat, resourceBundle);
     }
 
-    @Override
-    public BotApiMethod<?> process(Bot bot, Instant instant, Chat chat, User sender, String text, Message reply, ResourceBundle resourceBundle) {
-        try {
-            Command command = parse(text);
-            if (command == null || command.getBot() != null && !config.getBotUsername().equals(command.getBot())) {
-                return null;
-            }
-            CommandFunction func = commandHandlers.get(command.getName());
-            if (func != null) {
-                return func.apply(bot, instant, chat, sender, reply, command, resourceBundle);
-            }
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
     private Command parse(String text) {
         Matcher mainMatcher = mainPattern.matcher(text);
         boolean found = mainMatcher.find();
@@ -116,5 +90,27 @@ public class CommandServiceImpl implements CommandService {
             }
         }
         return new Command(name, bot, args);
+    }
+
+    @Override
+    protected boolean check(Command command) {
+        return !(command == null || command.getBot() != null && !config.getBotUsername().equals(command.getBot()));
+    }
+
+    @Override
+    protected Command convertTextToEntry(String text) {
+        return parse(text);
+    }
+
+    @Override
+    protected Map<String, EntryFunction<Command>> createEntryHandlers() {
+        return new HashMap<String, BaseReplyService.EntryFunction<Command>>() {{
+            put("start", CommandServiceImpl.this::menu);
+            put("menu", CommandServiceImpl.this::menu);
+            put("zone", CommandServiceImpl.this::zone);
+            put("vote", CommandServiceImpl.this::vote);
+            put("revoke", CommandServiceImpl.this::revoke);
+            put("winner", CommandServiceImpl.this::winner);
+        }};
     }
 }

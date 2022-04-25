@@ -5,17 +5,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
-import org.telegram.telegrambots.meta.api.methods.updates.SetWebhook;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
-import org.telegram.telegrambots.starter.SpringWebhookBot;
 import ru.stn.telegram.govnoed.config.TelegramConfig;
-import ru.stn.telegram.govnoed.services.CommandService;
-import ru.stn.telegram.govnoed.services.FormatService;
-import ru.stn.telegram.govnoed.services.KeyboardService;
-import ru.stn.telegram.govnoed.services.VoteService;
+import ru.stn.telegram.govnoed.services.*;
 
 import java.time.Instant;
 import java.util.Locale;
@@ -27,7 +22,8 @@ import java.util.ResourceBundle;
 public class Bot extends TelegramLongPollingBot {
     private final TelegramConfig config;
     private final VoteService statEntryService;
-    private final CommandService botCommandService;
+    private final CommandService commandService;
+    private final MessageService messageService;
     private final KeyboardService keyboardService;
     private final FormatService formatService;
 
@@ -42,6 +38,17 @@ public class Bot extends TelegramLongPollingBot {
                 formatService.getMessageLogEntry(reply),
                 formatService.getLocaleLogEntry(locale)
         );
+    }
+
+    BotApiMethod<?> coalesce(Instant instant, Chat chat, User sender, String text, Message reply, ResourceBundle resourceBundle, ReplyService ... services) {
+        BotApiMethod<?> result = null;
+        for (ReplyService service : services) {
+            result = service.process(this, instant, chat, sender, text, reply, resourceBundle);
+            if (result != null) {
+                return result;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -76,8 +83,10 @@ public class Bot extends TelegramLongPollingBot {
             if (found) {
                 log(type, instant, chat, sender, text, reply, locale);
                 ResourceBundle resourceBundle = locale == null ? ResourceBundle.getBundle("messages") : ResourceBundle.getBundle("messages", locale);
-                BotApiMethod<?> method = botCommandService.process(this, instant, chat, sender, text, reply, resourceBundle);
-                execute(method);
+                BotApiMethod<?> method = coalesce(instant, chat, sender, text, reply, resourceBundle, commandService, messageService);
+                if (method != null) {
+                    execute(method);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();

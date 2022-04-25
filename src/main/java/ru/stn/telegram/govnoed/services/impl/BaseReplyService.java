@@ -1,7 +1,5 @@
 package ru.stn.telegram.govnoed.services.impl;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -14,16 +12,14 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-public abstract class BaseReplyService<T extends BaseReplyService.BaseEntry> implements ReplyService<T> {
+public abstract class BaseReplyService<T extends BaseReplyService.Entry> implements ReplyService<T> {
     @FunctionalInterface
-    protected interface EntryFunction<T extends BaseEntry> {
+    protected interface EntryFunction<T extends Entry> {
         BotApiMethod<?> apply(Bot bot, Instant instant, Chat chat, User sender, Message reply, T entry, ResourceBundle resourceBundle) throws TelegramApiException;
     }
 
-    @Getter
-    @RequiredArgsConstructor
-    public static class BaseEntry {
-        private final String name;
+    public interface Entry {
+        String getKey();
     }
 
     private final Map<String, EntryFunction<T>> entryHandlers = createEntryHandlers();
@@ -35,7 +31,7 @@ public abstract class BaseReplyService<T extends BaseReplyService.BaseEntry> imp
             if (!check(entry)) {
                 return null;
             }
-            EntryFunction<T> func = entryHandlers.get(entry.getName());
+            EntryFunction<T> func = entryHandlers.get(entry.getKey());
             if (func != null) {
                 return func.apply(bot, instant, chat, sender, reply, entry, resourceBundle);
             }
