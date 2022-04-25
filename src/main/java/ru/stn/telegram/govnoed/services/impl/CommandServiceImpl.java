@@ -193,19 +193,19 @@ public class CommandServiceImpl implements CommandService {
     }
     private BotApiMethod<?> winner(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) {
         LocalDate date = instant.atZone(chatService.getTimezoneById(chat.getId())).toLocalDate();
-        List<Long> winnerIds = voteService.winner(date, chat.getId());
-        List<User> winners = winnerIds.stream().map(id -> getChatMemberUserUnchecked(bot, chat, id)).collect(Collectors.toList());
+        VoteService.Winners winners = voteService.winners(date, chat.getId());
+        List<User> winnerUsers = winners.getIds().stream().map(id -> getChatMemberUserUnchecked(bot, chat, id)).collect(Collectors.toList());
         String text = null;
         String dateText = dateTimeFormatter.format(date);
-        if (winners.size() == 0) {
+        if (winnerUsers.size() == 0) {
             text = String.format(resourceBundle.getString("no_winner_message"), dateText);
         }
-        if (winners.size() == 1) {
-            User winner = winners.get(0);
-            text = String.format(resourceBundle.getString("single_winner_message"), dateText, winner.getId(), formatService.getUserName(winner));
+        if (winnerUsers.size() == 1) {
+            User winner = winnerUsers.get(0);
+            text = String.format(resourceBundle.getString("single_winner_message"), dateText, winners.getScore(), winner.getId(), formatService.getUserName(winner));
         }
-        if (winners.size() > 1) {
-            text = String.format(resourceBundle.getString("multiple_winners_message"), dateText, usersToString(winners, resourceBundle.getString("multiple_winners_item")));
+        if (winnerUsers.size() > 1) {
+            text = String.format(resourceBundle.getString("multiple_winners_message"), dateText, winners.getScore(), usersToString(winnerUsers, resourceBundle.getString("multiple_winners_item")));
         }
         return createSendMessage(
                 chat,

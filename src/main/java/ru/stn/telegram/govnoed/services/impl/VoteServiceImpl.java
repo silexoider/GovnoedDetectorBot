@@ -50,13 +50,17 @@ public class VoteServiceImpl implements VoteService {
         return true;
     }
     @Override
-    public List<Long> winner(LocalDate date, long chatId) {
+    public Winners winners(LocalDate date, long chatId) {
         List<Score> scores = voteRepository.findScores(date, chatId).stream().map(x -> new Score((long)x[0], (int)(long)x[1])).collect(Collectors.toList());
         if (scores.size() == 0) {
-            return new LinkedList<>();
+            return new Winners(null, new LinkedList<>());
         } else {
             int maxScore = scores.get(0).getValue();
-            return scores.stream().filter(x -> x.getValue() == maxScore).map(x -> x.getUserId()).collect(Collectors.toList());
+            return
+                    new Winners(
+                            maxScore,
+                            scores.stream().filter(x -> x.getValue() == maxScore).map(Score::getUserId).collect(Collectors.toList())
+                    );
         }
     }
 }
