@@ -1,7 +1,9 @@
 package ru.stn.telegram.govnoed.telegram;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.updates.SetWebhook;
 import org.telegram.telegrambots.meta.api.objects.Chat;
@@ -21,21 +23,13 @@ import java.util.ResourceBundle;
 
 @Getter
 @Component
-public class Bot extends SpringWebhookBot {
+@RequiredArgsConstructor
+public class Bot extends TelegramLongPollingBot {
     private final TelegramConfig config;
     private final VoteService statEntryService;
     private final CommandService botCommandService;
     private final KeyboardService keyboardService;
     private final FormatService formatService;
-
-    public Bot(SetWebhook setWebhook, TelegramConfig config, VoteService statEntryService, CommandService botCommandService, KeyboardService keyboardService, FormatService formatService) {
-        super(setWebhook);
-        this.config = config;
-        this.statEntryService = statEntryService;
-        this.botCommandService = botCommandService;
-        this.keyboardService = keyboardService;
-        this.formatService = formatService;
-    }
 
     void log(String type, Instant instant, Chat chat, User sender, String text, Message reply, Locale locale) {
         System.out.printf(
@@ -51,7 +45,7 @@ public class Bot extends SpringWebhookBot {
     }
 
     @Override
-    public BotApiMethod<?> onWebhookUpdateReceived(Update update) {
+    public void onUpdateReceived(Update update) {
         try {
             boolean found = false;
             String type = null;
@@ -82,17 +76,12 @@ public class Bot extends SpringWebhookBot {
             if (found) {
                 log(type, instant, chat, sender, text, reply, locale);
                 ResourceBundle resourceBundle = locale == null ? ResourceBundle.getBundle("messages") : ResourceBundle.getBundle("messages", locale);
-                return botCommandService.process(this, instant, chat, sender, text, reply, resourceBundle);
+                BotApiMethod<?> method = botCommandService.process(this, instant, chat, sender, text, reply, resourceBundle);
+                execute(method);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return null;
-    }
-
-    @Override
-    public String getBotPath() {
-        return config.getWebhookPath();
     }
 
     @Override
