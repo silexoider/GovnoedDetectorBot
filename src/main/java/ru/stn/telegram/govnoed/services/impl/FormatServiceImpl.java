@@ -38,7 +38,7 @@ public class FormatServiceImpl implements FormatService {
                 text = user.getLastName();
             }
             else {
-                text = " " + user.getLastName();
+                text = String.format("%s %s", text, user.getLastName());
             }
         }
         if (text != null) {
