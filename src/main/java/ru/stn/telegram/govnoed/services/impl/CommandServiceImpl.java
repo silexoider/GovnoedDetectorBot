@@ -50,6 +50,7 @@ public class CommandServiceImpl implements CommandService {
     private final Pattern argsPattern = Pattern.compile(" +(?<arg>[^ ]+)");
 
     private final Map<String, CommandFunction> commandHandlers = new HashMap<String, CommandFunction>() {{
+        put("start", CommandServiceImpl.this::menu);
         put("menu", CommandServiceImpl.this::menu);
         put("zone", CommandServiceImpl.this::zone);
         put("vote", CommandServiceImpl.this::vote);
