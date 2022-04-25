@@ -9,12 +9,14 @@ import ru.stn.telegram.govnoed.services.FormatService;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.Temporal;
 import java.util.Locale;
 
 @Service
 public class FormatServiceImpl implements FormatService {
 
-    private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+    private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+    private final DateTimeFormatter instantFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
 
     @Override
     public String getUserName(User user) {
@@ -41,7 +43,11 @@ public class FormatServiceImpl implements FormatService {
 
     @Override
     public String getInstantLogEntry(Instant instant) {
-        return String.format("%s UTC", dateTimeFormatter.format(instant.atOffset(ZoneOffset.UTC)));
+        return String.format("%s UTC", instantFormatter.format(instant.atOffset(ZoneOffset.UTC)));
+    }
+    @Override
+    public String getDateEntry(Temporal temporal) {
+        return dateFormatter.format(temporal);
     }
     @Override
     public String getChatLogEntry(Chat chat) {

@@ -18,7 +18,6 @@ import ru.stn.telegram.govnoed.telegram.Bot;
 import ru.stn.telegram.govnoed.config.TelegramConfig;
 
 import java.time.*;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -49,7 +48,6 @@ public class CommandServiceImpl implements CommandService {
 
     private final Pattern mainPattern = Pattern.compile("^ */(?<name>[A-Za-z0-9_]+)(@(?<bot>[A-Za-z0-9_]+))?(?<args>( +([^ ]+))+)? *$");
     private final Pattern argsPattern = Pattern.compile(" +(?<arg>[^ ]+)");
-    private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     private final Map<String, CommandFunction> commandHandlers = new HashMap<String, CommandFunction>() {{
         put("menu", CommandServiceImpl.this::menu);
@@ -107,7 +105,7 @@ public class CommandServiceImpl implements CommandService {
             if (!chat.getType().equals("private") && !Arrays.asList("creator", "administrator").contains(chatMember.getStatus())) {
                 throw new RuntimeException(resourceBundle.getString("zone_action_failure_insufficient_privileges_message"));
             }
-            ZoneId timezone = null;
+            ZoneId timezone;
             try {
                 timezone = ZoneId.of(text);
             } catch (Exception e) {
@@ -122,7 +120,6 @@ public class CommandServiceImpl implements CommandService {
         return result;
     }
     private String viewZone(Chat chat, ResourceBundle resourceBundle) {
-        String result;
         ru.stn.telegram.govnoed.entities.Chat chatEntity = chatService.findById(chat.getId());
         return
                 chatEntity == null ?
@@ -133,19 +130,27 @@ public class CommandServiceImpl implements CommandService {
     private BotApiMethod<?> vote(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) throws TelegramApiException {
         User nominee = reply == null ? null : reply.getFrom();
         LocalDate date = instant.atZone(chatService.getTimezoneById(chat.getId())).toLocalDate();
-        String dateText = dateTimeFormatter.format(date);
         String text;
         text =
                 nominee == null ?
                         viewVote(bot, date, chat, sender, resourceBundle)
                         :
-                        makeVote(date, chat, sender, nominee, resourceBundle);
+                        makeVote(date, chat, sender, reply, resourceBundle);
         return createSendMessage(
                 chat,
                 text
         );
     }
-    private String makeVote(LocalDate date, Chat chat, User sender, User nominee, ResourceBundle resourceBundle) {
+    private String makeVote(LocalDate date, Chat chat, User sender, Message reply, ResourceBundle resourceBundle) {
+        User nominee = reply.getFrom();
+        LocalDate replyDate = Instant.ofEpochSecond(reply.getDate()).atZone(chatService.getTimezoneById(chat.getId())).toLocalDate();
+        if (!replyDate.equals(date)) {
+            return String.format(
+                    resourceBundle.getString("vote_action_invalid_date_message"),
+                    formatService.getDateEntry(replyDate),
+                    formatService.getDateEntry(date)
+            );
+        }
         boolean success = voteService.vote(date, sender.getId(), nominee.getId(), chat.getId());
         if (success) {
             return String.format(
@@ -160,7 +165,7 @@ public class CommandServiceImpl implements CommandService {
                     resourceBundle.getString("vote_action_denied_message"),
                     sender.getId(),
                     formatService.getUserName(sender),
-                    dateTimeFormatter.format(date)
+                    formatService.getDateEntry(date)
             );
         }
     }
@@ -177,7 +182,7 @@ public class CommandServiceImpl implements CommandService {
                 resourceBundle.getString("view_vote_message"),
                 sender.getId(),
                 formatService.getUserName(sender),
-                dateTimeFormatter.format(date),
+                formatService.getDateEntry(date),
                 nomineeText
         );
     }
@@ -196,7 +201,7 @@ public class CommandServiceImpl implements CommandService {
         VoteService.Winners winners = voteService.winners(date, chat.getId());
         List<User> winnerUsers = winners.getIds().stream().map(id -> getChatMemberUserUnchecked(bot, chat, id)).collect(Collectors.toList());
         String text = null;
-        String dateText = dateTimeFormatter.format(date);
+        String dateText = formatService.getDateEntry(date);
         if (winnerUsers.size() == 0) {
             text = String.format(resourceBundle.getString("no_winner_message"), dateText);
         }
