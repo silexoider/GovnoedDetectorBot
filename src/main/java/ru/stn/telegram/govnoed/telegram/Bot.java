@@ -62,7 +62,7 @@ public class Bot extends TelegramLongPollingBot {
                 sender = update.getMessage().getFrom();
                 text = update.getMessage().getText();
                 reply = update.getMessage().getReplyToMessage();
-                locale = Locale.forLanguageTag(update.getMessage().getFrom().getLanguageCode());
+                locale = update.getMessage().getFrom().getLanguageCode() == null ? null : Locale.forLanguageTag(update.getMessage().getFrom().getLanguageCode());
                 instant = Instant.ofEpochSecond(update.getMessage().getDate());
             }
             if (update.hasCallbackQuery() && !found) {
