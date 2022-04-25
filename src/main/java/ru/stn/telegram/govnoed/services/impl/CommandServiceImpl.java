@@ -72,6 +72,9 @@ public class CommandServiceImpl extends BaseReplyService<CommandServiceImpl.Comm
     private BotApiMethod<?> winner(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) {
         return actionService.showWinners(bot, instant, chat, resourceBundle);
     }
+    private BotApiMethod<?> scores(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) {
+        return actionService.showScores(bot, instant, chat, resourceBundle);
+    }
 
     private Command parse(String text) {
         Matcher mainMatcher = mainPattern.matcher(text);
@@ -111,6 +114,7 @@ public class CommandServiceImpl extends BaseReplyService<CommandServiceImpl.Comm
             put("vote", CommandServiceImpl.this::vote);
             put("revoke", CommandServiceImpl.this::revoke);
             put("winner", CommandServiceImpl.this::winner);
+            put("scores", CommandServiceImpl.this::scores);
         }};
     }
 }

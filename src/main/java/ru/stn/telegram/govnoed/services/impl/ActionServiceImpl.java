@@ -160,4 +160,24 @@ public class ActionServiceImpl implements ActionService {
                 text
         );
     }
+    public BotApiMethod<?> showScores(Bot bot, Instant instant, Chat chat, ResourceBundle resourceBundle) {
+        LocalDate date = instant.atZone(chatService.getTimezoneById(chat.getId())).toLocalDate();
+        List<VoteService.Score> scores = voteService.scores(date, chat.getId());
+        StringBuilder text = new StringBuilder(resourceBundle.getString("scores_message"));
+        String entryFormat = resourceBundle.getString("scores_entry");
+        for (VoteService.Score score : scores) {
+            User user = chatMemberService.getChatMemberUser(bot, chat, score.getUserId());
+            text.append(
+                    String.format(
+                        "%n%s",
+                        String.format(
+                                entryFormat,
+                                formatService.getUserString(user, resourceBundle),
+                                score.getValue()
+                        )
+                    )
+            );
+        }
+        return createSendMessage(chat, text.toString());
+    }
 }

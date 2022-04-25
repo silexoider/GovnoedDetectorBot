@@ -16,13 +16,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class VoteServiceImpl implements VoteService {
-    @Getter
-    @RequiredArgsConstructor
-    private static class Score {
-        private final long userId;
-        private final int value;
-    }
-
     private final VoteRepository voteRepository;
 
     @Override
@@ -51,7 +44,7 @@ public class VoteServiceImpl implements VoteService {
     }
     @Override
     public Winners winners(LocalDate date, long chatId) {
-        List<Score> scores = voteRepository.findScores(date, chatId).stream().map(x -> new Score((long)x[0], (int)(long)x[1])).collect(Collectors.toList());
+        List<Score> scores = scores(date, chatId);
         if (scores.size() == 0) {
             return new Winners(null, new LinkedList<>());
         } else {
@@ -62,5 +55,9 @@ public class VoteServiceImpl implements VoteService {
                             scores.stream().filter(x -> x.getValue() == maxScore).map(Score::getUserId).collect(Collectors.toList())
                     );
         }
+    }
+    @Override
+    public List<Score> scores(LocalDate date, long chatId) {
+        return voteRepository.findScores(date, chatId).stream().map(x -> new Score((long)x[0], (int)(long)x[1])).collect(Collectors.toList());
     }
 }

@@ -8,6 +8,6 @@ import ru.stn.telegram.govnoed.telegram.Bot;
 
 public interface ChatMemberService {
     User getChatMemberUser(ChatMember chatMember);
-    User getChatMemberUser(Bot bot, Chat chat, long userId) throws TelegramApiException;
+    User getChatMemberUser(Bot bot, Chat chat, long userId);
     User getChatMemberUserUnchecked(Bot bot, Chat chat, long userId);
 }

@@ -34,7 +34,7 @@ public class ChatMemberServiceImpl implements ChatMemberService {
         }
     }
     @Override
-    public User getChatMemberUser(Bot bot, Chat chat, long userId) throws TelegramApiException {
+    public User getChatMemberUser(Bot bot, Chat chat, long userId) {
         try {
             return getChatMemberUser(bot.execute(new GetChatMember(chat.getId().toString(), userId)));
         } catch (Exception e) {
@@ -43,10 +43,6 @@ public class ChatMemberServiceImpl implements ChatMemberService {
     }
     @Override
     public User getChatMemberUserUnchecked(Bot bot, Chat chat, long userId) {
-        try {
-            return getChatMemberUser(bot, chat, userId);
-        } catch (TelegramApiException e) {
-            throw new UncheckedExecutionException(e);
-        }
+        return getChatMemberUser(bot, chat, userId);
     }
 }

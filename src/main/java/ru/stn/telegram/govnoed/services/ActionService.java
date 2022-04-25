@@ -19,4 +19,5 @@ public interface ActionService {
     BotApiMethod<?> showVote(Bot bot, LocalDate date, Chat chat, User sender, ResourceBundle resourceBundle) throws TelegramApiException;
     BotApiMethod<?> revoke(Instant instant, Chat chat, User sender, ResourceBundle resourceBundle);
     BotApiMethod<?> showWinners(Bot bot, Instant instant, Chat chat, ResourceBundle resourceBundle);
+    BotApiMethod<?> showScores(Bot bot, Instant instant, Chat chat, ResourceBundle resourceBundle);
 }
