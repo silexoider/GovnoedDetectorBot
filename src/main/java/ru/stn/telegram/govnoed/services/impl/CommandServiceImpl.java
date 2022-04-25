@@ -13,16 +13,11 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.chatmember.*;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.stn.telegram.govnoed.entities.Vote;
-import ru.stn.telegram.govnoed.services.CommandService;
-import ru.stn.telegram.govnoed.services.FormatService;
-import ru.stn.telegram.govnoed.services.KeyboardService;
-import ru.stn.telegram.govnoed.services.VoteService;
+import ru.stn.telegram.govnoed.services.*;
 import ru.stn.telegram.govnoed.telegram.Bot;
 import ru.stn.telegram.govnoed.config.TelegramConfig;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
@@ -48,6 +43,7 @@ public class CommandServiceImpl implements CommandService {
 
     private final TelegramConfig config;
     private final VoteService voteService;
+    private final ChatService chatService;
     private final KeyboardService keyboardService;
     private final FormatService formatService;
 
@@ -57,6 +53,7 @@ public class CommandServiceImpl implements CommandService {
 
     private final Map<String, CommandFunction> commandHandlers = new HashMap<String, CommandFunction>() {{
         put("menu", CommandServiceImpl.this::menu);
+        put("zone", CommandServiceImpl.this::zone);
         put("vote", CommandServiceImpl.this::vote);
         put("revoke", CommandServiceImpl.this::revoke);
         put("winner", CommandServiceImpl.this::winner);
@@ -95,53 +92,97 @@ public class CommandServiceImpl implements CommandService {
         sendMessage.setReplyMarkup(keyboardService.createInlineKeyboard());
         return sendMessage;
     }
+    private BotApiMethod<?> zone(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) {
+        String text =
+                command.getArgs().size() == 0 ?
+                        viewZone(chat, resourceBundle)
+                        :
+                        makeZone(bot, chat, sender, command.getArgs().get(0), resourceBundle);
+        return createSendMessage(chat, text);
+    }
+    private String makeZone(Bot bot, Chat chat, User sender, String text, ResourceBundle resourceBundle) {
+        String result;
+        try {
+            ChatMember chatMember = bot.execute(new GetChatMember(chat.getId().toString(), sender.getId()));
+            if (!chat.getType().equals("private") && !Arrays.asList("creator", "administrator").contains(chatMember.getStatus())) {
+                throw new RuntimeException(resourceBundle.getString("zone_action_failure_insufficient_privileges_message"));
+            }
+            ZoneId timezone = null;
+            try {
+                timezone = ZoneId.of(text);
+            } catch (Exception e) {
+                throw new RuntimeException(String.format(resourceBundle.getString("zone_action_failure_invalid_timezone_message"), text), e);
+            }
+            chatService.setTimezone(chat.getId(), timezone);
+            result = String.format(resourceBundle.getString("zone_action_success_message"), timezone);
+
+        } catch (Exception e) {
+            result = String.format(resourceBundle.getString("zone_action_failure_message"), e.getMessage());
+        }
+        return result;
+    }
+    private String viewZone(Chat chat, ResourceBundle resourceBundle) {
+        String result;
+        ru.stn.telegram.govnoed.entities.Chat chatEntity = chatService.findById(chat.getId());
+        return
+                chatEntity == null ?
+                        resourceBundle.getString("view_zone_absent_message")
+                        :
+                        String.format(resourceBundle.getString("view_zone_exists_message"), chatEntity.getTimezone());
+    }
     private BotApiMethod<?> vote(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) throws TelegramApiException {
         User nominee = reply == null ? null : reply.getFrom();
-        LocalDate date = instant.atZone(ZoneOffset.UTC).toLocalDate();
+        LocalDate date = instant.atZone(chatService.getTimezoneById(chat.getId())).toLocalDate();
         String dateText = dateTimeFormatter.format(date);
         String text;
-        if (nominee != null) {
-            boolean success = voteService.vote(date, sender.getId(), nominee.getId(), chat.getId());
-            if (success) {
-                text = String.format(
-                        resourceBundle.getString("vote_action_message"),
-                        sender.getId(),
-                        formatService.getUserName(sender),
-                        nominee.getId(),
-                        formatService.getUserName(nominee)
-                );
-            } else {
-                text = String.format(
-                        resourceBundle.getString("vote_action_denied_message"),
-                        sender.getId(),
-                        formatService.getUserName(sender),
-                        dateText
-                );
-            }
-        } else {
-            Vote vote = voteService.getVote(date, sender.getId(), chat.getId());
-            String nomineeText;
-            if (vote == null) {
-                nomineeText = resourceBundle.getString("view_vote_message_not_voted");
-            } else {
-                nominee = getChatMemberUser(bot, chat, vote.getNomineeId());
-                nomineeText = String.format(resourceBundle.getString("view_vote_message_voted"), nominee.getId(), formatService.getUserName(nominee));
-            }
-            text = String.format(
-                    resourceBundle.getString("view_vote_message"),
-                    sender.getId(),
-                    formatService.getUserName(sender),
-                    dateText,
-                    nomineeText
-            );
-        }
+        text =
+                nominee == null ?
+                        viewVote(bot, date, chat, sender, resourceBundle)
+                        :
+                        makeVote(date, chat, sender, nominee, resourceBundle);
         return createSendMessage(
                 chat,
                 text
         );
     }
+    private String makeVote(LocalDate date, Chat chat, User sender, User nominee, ResourceBundle resourceBundle) {
+        boolean success = voteService.vote(date, sender.getId(), nominee.getId(), chat.getId());
+        if (success) {
+            return String.format(
+                    resourceBundle.getString("vote_action_message"),
+                    sender.getId(),
+                    formatService.getUserName(sender),
+                    nominee.getId(),
+                    formatService.getUserName(nominee)
+            );
+        } else {
+            return String.format(
+                    resourceBundle.getString("vote_action_denied_message"),
+                    sender.getId(),
+                    formatService.getUserName(sender),
+                    dateTimeFormatter.format(date)
+            );
+        }
+    }
+    private String viewVote(Bot bot, LocalDate date, Chat chat, User sender, ResourceBundle resourceBundle) throws TelegramApiException {
+        Vote vote = voteService.getVote(date, sender.getId(), chat.getId());
+        String nomineeText;
+        if (vote == null) {
+            nomineeText = resourceBundle.getString("view_vote_message_not_voted");
+        } else {
+            User nominee = getChatMemberUser(bot, chat, vote.getNomineeId());
+            nomineeText = String.format(resourceBundle.getString("view_vote_message_voted"), nominee.getId(), formatService.getUserName(nominee));
+        }
+        return String.format(
+                resourceBundle.getString("view_vote_message"),
+                sender.getId(),
+                formatService.getUserName(sender),
+                dateTimeFormatter.format(date),
+                nomineeText
+        );
+    }
     private BotApiMethod<?> revoke(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) {
-        LocalDate date = instant.atZone(ZoneOffset.UTC).toLocalDate();
+        LocalDate date = instant.atZone(chatService.getTimezoneById(chat.getId())).toLocalDate();
         boolean success = voteService.revoke(date, sender.getId(), chat.getId());
         String textFormat = success ? resourceBundle.getString("revoke_message") : resourceBundle.getString("unable_to_revoke_message");
         String text = String.format(textFormat, sender.getId(), formatService.getUserName(sender));
@@ -151,7 +192,7 @@ public class CommandServiceImpl implements CommandService {
         );
     }
     private BotApiMethod<?> winner(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) {
-        LocalDate date = instant.atZone(ZoneOffset.UTC).toLocalDate();
+        LocalDate date = instant.atZone(chatService.getTimezoneById(chat.getId())).toLocalDate();
         List<Long> winnerIds = voteService.winner(date, chat.getId());
         List<User> winners = winnerIds.stream().map(id -> getChatMemberUserUnchecked(bot, chat, id)).collect(Collectors.toList());
         String text = null;
