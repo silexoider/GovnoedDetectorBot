@@ -58,6 +58,7 @@ public class MessageServiceImpl extends BaseReplyService<MessageServiceImpl.Entr
         return new HashMap<String, EntryFunction<MessageServiceImpl.Entry>>() {{
             put("ГОВНОЕД", MessageServiceImpl.this::common);
             put("ТЫ ГОВНОЕД", MessageServiceImpl.this::common);
+            put("ГОВНОЕД ТЫ", MessageServiceImpl.this::common);
         }};
     }
 }
