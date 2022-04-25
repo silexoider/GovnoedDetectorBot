@@ -12,6 +12,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.Temporal;
 import java.util.List;
 import java.util.Locale;
+import java.util.ResourceBundle;
 
 @Service
 public class FormatServiceImpl implements FormatService {
@@ -67,15 +68,23 @@ public class FormatServiceImpl implements FormatService {
         return locale == null ? "{null}" : locale.toLanguageTag();
     }
     @Override
-    public String usersToString(List<User> users, String pattern) {
+    public String usersToString(List<User> users, ResourceBundle resourceBundle) {
         StringBuilder result = new StringBuilder();
         for (User user : users) {
-            String item = String.format(pattern, user.getId(), getUserName(user));
+            String item = getUserString(user, resourceBundle);
             if (result.length() > 0) {
                 result.append(", ");
             }
             result.append(item);
         }
         return result.toString();
+    }
+    @Override
+    public String getUserString(User user, ResourceBundle resourceBundle) {
+        return
+                user == null ?
+                        resourceBundle.getString("show_absent_user_message")
+                        :
+                        String.format(resourceBundle.getString("show_present_user_message"), user.getId(), getUserName(user));
     }
 }

@@ -95,16 +95,13 @@ public class ActionServiceImpl implements ActionService {
         if (success) {
             text = String.format(
                     resourceBundle.getString("vote_action_message"),
-                    sender.getId(),
-                    formatService.getUserName(sender),
-                    nominee.getId(),
-                    formatService.getUserName(nominee)
+                    formatService.getUserString(sender, resourceBundle),
+                    formatService.getUserString(nominee, resourceBundle)
             );
         } else {
             text = String.format(
                     resourceBundle.getString("vote_action_denied_message"),
-                    sender.getId(),
-                    formatService.getUserName(sender),
+                    formatService.getUserString(sender, resourceBundle),
                     formatService.getDateEntry(date)
             );
         }
@@ -118,14 +115,13 @@ public class ActionServiceImpl implements ActionService {
             nomineeText = resourceBundle.getString("view_vote_message_not_voted");
         } else {
             User nominee = chatMemberService.getChatMemberUser(bot, chat, vote.getNomineeId());
-            nomineeText = String.format(resourceBundle.getString("view_vote_message_voted"), nominee.getId(), formatService.getUserName(nominee));
+            nomineeText = formatService.getUserString(nominee, resourceBundle);
         }
         return createSendMessage(
                 chat,
                 String.format(
                     resourceBundle.getString("view_vote_message"),
-                    sender.getId(),
-                    formatService.getUserName(sender),
+                    formatService.getUserString(sender, resourceBundle),
                     formatService.getDateEntry(date),
                     nomineeText
                 )
@@ -136,7 +132,7 @@ public class ActionServiceImpl implements ActionService {
         LocalDate date = instant.atZone(chatService.getTimezoneById(chat.getId())).toLocalDate();
         boolean success = voteService.revoke(date, sender.getId(), chat.getId());
         String textFormat = success ? resourceBundle.getString("revoke_message") : resourceBundle.getString("unable_to_revoke_message");
-        String text = String.format(textFormat, sender.getId(), formatService.getUserName(sender));
+        String text = String.format(textFormat, formatService.getUserString(sender, resourceBundle));
         return createSendMessage(
                 chat,
                 text
@@ -154,10 +150,10 @@ public class ActionServiceImpl implements ActionService {
         }
         if (winnerUsers.size() == 1) {
             User winner = winnerUsers.get(0);
-            text = String.format(resourceBundle.getString("single_winner_message"), dateText, winners.getScore(), winner.getId(), formatService.getUserName(winner));
+            text = String.format(resourceBundle.getString("single_winner_message"), dateText, winners.getScore(), formatService.getUserString(winner, resourceBundle));
         }
         if (winnerUsers.size() > 1) {
-            text = String.format(resourceBundle.getString("multiple_winners_message"), dateText, winners.getScore(), formatService.usersToString(winnerUsers, resourceBundle.getString("multiple_winners_item")));
+            text = String.format(resourceBundle.getString("multiple_winners_message"), dateText, winners.getScore(), formatService.usersToString(winnerUsers, resourceBundle));
         }
         return createSendMessage(
                 chat,

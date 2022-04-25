@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.time.temporal.Temporal;
 import java.util.List;
 import java.util.Locale;
+import java.util.ResourceBundle;
 
 public interface FormatService {
     String getUserName(User user);
@@ -18,5 +19,6 @@ public interface FormatService {
     String getUserLogEntry(User user);
     String getMessageLogEntry(Message message);
     String getLocaleLogEntry(Locale locale);
-    String usersToString(List<User> users, String pattern);
+    String usersToString(List<User> users, ResourceBundle resourceBundle);
+    String getUserString(User user, ResourceBundle resourceBundle);
 }

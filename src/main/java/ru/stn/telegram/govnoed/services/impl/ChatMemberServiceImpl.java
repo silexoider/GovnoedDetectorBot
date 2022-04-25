@@ -27,11 +27,19 @@ public class ChatMemberServiceImpl implements ChatMemberService {
 
     @Override
     public User getChatMemberUser(ChatMember chatMember) {
-        return chatMemberExtractors.get(chatMember.getStatus()).apply(chatMember);
+        try {
+            return chatMemberExtractors.get(chatMember.getStatus()).apply(chatMember);
+        } catch (Exception e) {
+            return null;
+        }
     }
     @Override
     public User getChatMemberUser(Bot bot, Chat chat, long userId) throws TelegramApiException {
-        return getChatMemberUser(bot.execute(new GetChatMember(chat.getId().toString(), userId)));
+        try {
+            return getChatMemberUser(bot.execute(new GetChatMember(chat.getId().toString(), userId)));
+        } catch (Exception e) {
+            return null;
+        }
     }
     @Override
     public User getChatMemberUserUnchecked(Bot bot, Chat chat, long userId) {
