@@ -6,6 +6,7 @@ import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.time.Instant;
 import java.time.temporal.Temporal;
+import java.util.List;
 import java.util.Locale;
 
 public interface FormatService {
@@ -17,4 +18,5 @@ public interface FormatService {
     String getUserLogEntry(User user);
     String getMessageLogEntry(Message message);
     String getLocaleLogEntry(Locale locale);
+    String usersToString(List<User> users, String pattern);
 }

@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.Temporal;
+import java.util.List;
 import java.util.Locale;
 
 @Service
@@ -64,5 +65,17 @@ public class FormatServiceImpl implements FormatService {
     @Override
     public String getLocaleLogEntry(Locale locale) {
         return locale == null ? "{null}" : locale.toLanguageTag();
+    }
+    @Override
+    public String usersToString(List<User> users, String pattern) {
+        StringBuilder result = new StringBuilder();
+        for (User user : users) {
+            String item = String.format(pattern, user.getId(), getUserName(user));
+            if (result.length() > 0) {
+                result.append(", ");
+            }
+            result.append(item);
+        }
+        return result.toString();
     }
 }
