@@ -9,8 +9,10 @@ import ru.stn.telegram.govnoed.services.FormatService;
 import ru.stn.telegram.govnoed.services.LocalizationService;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.Temporal;
 import java.util.List;
 import java.util.Locale;
@@ -90,5 +92,16 @@ public class FormatServiceImpl implements FormatService {
                         localizationService.getShowAbsentUserMessage(resourceBundle)
                         :
                         String.format(localizationService.getShowPresentUserMessage(resourceBundle), user.getId(), getUserName(user));
+    }
+
+    @Override
+    public LocalDate parseDate(String text) {
+        LocalDate date;
+        try {
+            date = LocalDate.parse(text, dateFormatter);
+        } catch (DateTimeParseException e) {
+            date = null;
+        }
+        return date;
     }
 }

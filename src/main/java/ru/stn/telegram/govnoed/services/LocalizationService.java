@@ -29,7 +29,9 @@ public interface LocalizationService {
         SCORES_MESSAGE("scores_message"),
         SCORES_ENTRY("scores_entry"),
         SHOW_PRESENT_USER_MESSAGE("show_present_user_message"),
-        SHOW_ABSENT_USER_MESSAGE("show_absent_user_message");
+        SHOW_ABSENT_USER_MESSAGE("show_absent_user_message"),
+        UNABLE_TO_RECOGNIZE_DATE_MESSAGE("unable_to_recognize_date_message"),
+        INVALID_WINNER_DATE_MESSAGE("invalid_winner_date_message");
 
         private final String name;
     }
@@ -57,4 +59,6 @@ public interface LocalizationService {
     String getScoresEntry(ResourceBundle resourceBundle);
     String getShowPresentUserMessage(ResourceBundle resourceBundle);
     String getShowAbsentUserMessage(ResourceBundle resourceBundle);
+    String getUnableToRecognizeDateMessage(ResourceBundle resourceBundle);
+    String getInvalidWinnerDateMessage(ResourceBundle resourceBundle);
 }

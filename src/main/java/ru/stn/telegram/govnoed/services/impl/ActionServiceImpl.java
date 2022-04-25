@@ -31,7 +31,8 @@ public class ActionServiceImpl implements ActionService {
     private final FormatService formatService;
     private final LocalizationService localizationService;
 
-    private SendMessage createSendMessage(Chat chat, String text) {
+    @Override
+    public SendMessage createSendMessage(Chat chat, String text) {
         SendMessage sendMessage = new SendMessage(chat.getId().toString(), text);
         sendMessage.setParseMode("HTML");
         return sendMessage;
@@ -153,7 +154,12 @@ public class ActionServiceImpl implements ActionService {
     }
     public BotApiMethod<?> showScores(Bot bot, LocalDate date, Chat chat, ResourceBundle resourceBundle) {
         List<VoteService.Score> scores = voteService.scores(date, chat.getId());
-        StringBuilder text = new StringBuilder(localizationService.getScoresMessage(resourceBundle));
+        StringBuilder text = new StringBuilder(
+                String.format(
+                        localizationService.getScoresMessage(resourceBundle),
+                        formatService.getDateEntry(date)
+                )
+        );
         String entryFormat = localizationService.getScoresEntry(resourceBundle);
         for (VoteService.Score score : scores) {
             User user = chatMemberService.getChatMemberUser(bot, chat, score.getUserId());

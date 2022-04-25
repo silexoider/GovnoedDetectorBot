@@ -5,6 +5,7 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.temporal.Temporal;
 import java.util.List;
 import java.util.Locale;
@@ -21,4 +22,6 @@ public interface FormatService {
     String getLocaleLogEntry(Locale locale);
     String usersToString(List<User> users, ResourceBundle resourceBundle);
     String getUserString(User user, ResourceBundle resourceBundle);
+
+    LocalDate parseDate(String text);
 }

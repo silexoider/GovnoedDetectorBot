@@ -1,6 +1,7 @@
 package ru.stn.telegram.govnoed.services;
 
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.User;
@@ -12,6 +13,8 @@ import java.time.LocalDate;
 import java.util.ResourceBundle;
 
 public interface ActionService {
+    SendMessage createSendMessage(Chat chat, String text);
+
     BotApiMethod<?> showMenu(Chat chat, ResourceBundle resourceBundle);
     BotApiMethod<?> showTimezone(Chat chat, ResourceBundle resourceBundle);
     BotApiMethod<?> setTimezone(Bot bot, Chat chat, User sender, String text, ResourceBundle resourceBundle);

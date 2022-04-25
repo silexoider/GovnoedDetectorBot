@@ -14,6 +14,7 @@ import ru.stn.telegram.govnoed.config.TelegramConfig;
 
 import java.time.*;
 import java.util.*;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,9 +37,26 @@ public class CommandServiceImpl extends BaseReplyServiceImpl<CommandServiceImpl.
     private final TelegramConfig config;
     private final ChatService chatService;
     private final ActionService actionService;
+    private final FormatService formatService;
+    private final LocalizationService localizationService;
 
     private final Pattern mainPattern = Pattern.compile("^ */(?<name>[A-Za-z0-9_]+)(@(?<bot>[A-Za-z0-9_]+))?(?<args>( +([^ ]+))+)? *$");
     private final Pattern argsPattern = Pattern.compile(" +(?<arg>[^ ]+)");
+
+    private LocalDate getDateWithArgs(LocalDate date, Chat chat, List<String> args) {
+        if (args.size() > 0) {
+            String text = args.get(0);
+            date = formatService.parseDate(text);
+        };
+        return date;
+    }
+    private BotApiMethod<?> runFuncWithDateArg(LocalDate date, Chat chat, Command command, ResourceBundle resourceBundle, Function<LocalDate, BotApiMethod<?>> func) {
+        date = getDateWithArgs(date, chat, command.getArgs());
+        if (date == null) {
+            return actionService.createSendMessage(chat, String.format(localizationService.getUnableToRecognizeDateMessage(resourceBundle), command.getArgs().get(0)));
+        }
+        return func.apply(date);
+    }
 
     private BotApiMethod<?> menu(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) {
         return actionService.showMenu(chat, resourceBundle);
@@ -63,10 +81,28 @@ public class CommandServiceImpl extends BaseReplyServiceImpl<CommandServiceImpl.
         return actionService.revoke(chatService.instantToDate(chat.getId(), instant), chat ,sender, resourceBundle);
     }
     private BotApiMethod<?> winner(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) {
-        return actionService.showWinners(bot, chatService.instantToDate(chat.getId(), instant), chat, resourceBundle);
+        return runFuncWithDateArg(
+                chatService.instantToDate(chat.getId(), instant).minusDays(1),
+                chat,
+                command,
+                resourceBundle,
+                date -> {
+                    LocalDate now = Instant.now().atZone(chatService.getTimezoneById(chat.getId())).toLocalDate();
+                    if (!date.isBefore(now)) {
+                        return actionService.createSendMessage(chat, localizationService.getInvalidWinnerDateMessage(resourceBundle));
+                    }
+                    return actionService.showWinners(bot, date, chat, resourceBundle);
+                }
+        );
     }
     private BotApiMethod<?> scores(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) {
-        return actionService.showScores(bot, chatService.instantToDate(chat.getId(), instant), chat, resourceBundle);
+        return runFuncWithDateArg(
+                chatService.instantToDate(chat.getId(), instant),
+                chat,
+                command,
+                resourceBundle,
+                (date) -> actionService.showScores(bot, date, chat, resourceBundle)
+        );
     }
 
     private Command parse(String text) {

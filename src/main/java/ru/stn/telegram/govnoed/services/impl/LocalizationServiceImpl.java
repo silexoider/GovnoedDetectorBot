@@ -1,9 +1,11 @@
 package ru.stn.telegram.govnoed.services.impl;
 
+import org.springframework.stereotype.Service;
 import ru.stn.telegram.govnoed.services.LocalizationService;
 
 import java.util.ResourceBundle;
 
+@Service
 public class LocalizationServiceImpl implements LocalizationService {
     @Override
     public String getMessage(ResourceBundle resourceBundle, Message message) {
@@ -113,5 +115,15 @@ public class LocalizationServiceImpl implements LocalizationService {
     @Override
     public String getShowAbsentUserMessage(ResourceBundle resourceBundle) {
         return getMessage(resourceBundle, Message.SHOW_ABSENT_USER_MESSAGE);
+    }
+
+    @Override
+    public String getUnableToRecognizeDateMessage(ResourceBundle resourceBundle) {
+        return getMessage(resourceBundle, Message.UNABLE_TO_RECOGNIZE_DATE_MESSAGE);
+    }
+
+    @Override
+    public String getInvalidWinnerDateMessage(ResourceBundle resourceBundle) {
+        return getMessage(resourceBundle, Message.INVALID_WINNER_DATE_MESSAGE);
     }
 }
