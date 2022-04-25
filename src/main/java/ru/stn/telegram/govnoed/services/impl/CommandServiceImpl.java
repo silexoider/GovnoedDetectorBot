@@ -43,15 +43,15 @@ public class CommandServiceImpl extends BaseReplyServiceImpl<CommandServiceImpl.
     private final Pattern mainPattern = Pattern.compile("^ */(?<name>[A-Za-z0-9_]+)(@(?<bot>[A-Za-z0-9_]+))?(?<args>( +([^ ]+))+)? *$");
     private final Pattern argsPattern = Pattern.compile(" +(?<arg>[^ ]+)");
 
-    private LocalDate getDateWithArgs(LocalDate date, Chat chat, List<String> args) {
+    private LocalDate getDateWithArgs(LocalDate date, List<String> args) {
         if (args.size() > 0) {
             String text = args.get(0);
             date = formatService.parseDate(text);
-        };
+        }
         return date;
     }
     private BotApiMethod<?> runFuncWithDateArg(LocalDate date, Chat chat, Command command, ResourceBundle resourceBundle, Function<LocalDate, BotApiMethod<?>> func) {
-        date = getDateWithArgs(date, chat, command.getArgs());
+        date = getDateWithArgs(date, command.getArgs());
         if (date == null) {
             return actionService.createSendMessage(chat, String.format(localizationService.getUnableToRecognizeDateMessage(resourceBundle), command.getArgs().get(0)));
         }
