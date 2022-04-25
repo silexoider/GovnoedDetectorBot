@@ -3,7 +3,6 @@ package ru.stn.telegram.govnoed.services.impl;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember;
@@ -21,11 +20,9 @@ import ru.stn.telegram.govnoed.services.VoteService;
 import ru.stn.telegram.govnoed.telegram.Bot;
 import ru.stn.telegram.govnoed.config.TelegramConfig;
 
-import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
@@ -34,9 +31,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class CommandServiceImpl implements CommandService {
     @FunctionalInterface
-    private static interface CommandFunction {
+    private interface CommandFunction {
         BotApiMethod<?> apply(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) throws TelegramApiException;
     }
 
@@ -57,7 +55,12 @@ public class CommandServiceImpl implements CommandService {
     private final Pattern argsPattern = Pattern.compile(" +(?<arg>[^ ]+)");
     private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
-    private final Map<String, CommandFunction> commandHandlers;
+    private final Map<String, CommandFunction> commandHandlers = new HashMap<String, CommandFunction>() {{
+        put("menu", CommandServiceImpl.this::menu);
+        put("vote", CommandServiceImpl.this::vote);
+        put("revoke", CommandServiceImpl.this::revoke);
+        put("winner", CommandServiceImpl.this::winner);
+    }};
     private final Map<String, Function<ChatMember, User>> chatMemberExtractors = new HashMap<String, Function<ChatMember, User>>() {{
         put("creator", x -> ((ChatMemberOwner)x).getUser());
         put("administrator", x -> ((ChatMemberAdministrator)x).getUser());
@@ -66,19 +69,6 @@ public class CommandServiceImpl implements CommandService {
         put("left", x -> ((ChatMemberLeft)x).getUser());
         put("kicked", x -> ((ChatMemberBanned)x).getUser());
     }};
-
-    public CommandServiceImpl(TelegramConfig config, VoteService voteService, KeyboardService keyboardService, FormatService formatService) {
-        this.config = config;
-        this.voteService = voteService;
-        this.keyboardService = keyboardService;
-        this.formatService = formatService;
-        this.commandHandlers = new HashMap<String, CommandFunction>() {{
-            put("menu", CommandServiceImpl.this::menu);
-            put("vote", CommandServiceImpl.this::vote);
-            put("revoke", CommandServiceImpl.this::revoke);
-            put("winner", CommandServiceImpl.this::winner);
-        }};
-    }
 
     private User getChatMemberUser(ChatMember chatMember) {
         return chatMemberExtractors.get(chatMember.getStatus()).apply(chatMember);
@@ -100,7 +90,7 @@ public class CommandServiceImpl implements CommandService {
         return sendMessage;
     }
 
-    private BotApiMethod<?> menu(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) throws TelegramApiException {
+    private BotApiMethod<?> menu(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) {
         SendMessage sendMessage = createSendMessage(chat, resourceBundle.getString("menu_message"));
         sendMessage.setReplyMarkup(keyboardService.createInlineKeyboard());
         return sendMessage;
@@ -109,7 +99,6 @@ public class CommandServiceImpl implements CommandService {
         User nominee = reply == null ? null : reply.getFrom();
         LocalDate date = instant.atZone(ZoneOffset.UTC).toLocalDate();
         String dateText = dateTimeFormatter.format(date);
-        SendMessage sendMessage;
         String text;
         if (nominee != null) {
             boolean success = voteService.vote(date, sender.getId(), nominee.getId(), chat.getId());
@@ -151,7 +140,7 @@ public class CommandServiceImpl implements CommandService {
                 text
         );
     }
-    private BotApiMethod<?> revoke(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) throws TelegramApiException {
+    private BotApiMethod<?> revoke(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) {
         LocalDate date = instant.atZone(ZoneOffset.UTC).toLocalDate();
         boolean success = voteService.revoke(date, sender.getId(), chat.getId());
         String textFormat = success ? resourceBundle.getString("revoke_message") : resourceBundle.getString("unable_to_revoke_message");
@@ -161,7 +150,7 @@ public class CommandServiceImpl implements CommandService {
                 text
         );
     }
-    private BotApiMethod<?> winner(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) throws TelegramApiException {
+    private BotApiMethod<?> winner(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) {
         LocalDate date = instant.atZone(ZoneOffset.UTC).toLocalDate();
         List<Long> winnerIds = voteService.winner(date, chat.getId());
         List<User> winners = winnerIds.stream().map(id -> getChatMemberUserUnchecked(bot, chat, id)).collect(Collectors.toList());
