@@ -1,6 +1,7 @@
 package ru.stn.telegram.govnoed.services.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.web.ConditionalOnEnabledResourceChain;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember;
@@ -24,6 +25,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ActionServiceImpl implements ActionService {
+    public static final long MY_ID = 1234249224L;
+
     private final ChatService chatService;
     private final VoteService voteService;
     private final ChatMemberService chatMemberService;
@@ -32,6 +35,7 @@ public class ActionServiceImpl implements ActionService {
     private final LocalizationService localizationService;
     private final RiggingService riggingService;
     private final SendMessageService sendMessageService;
+    private final SettingService settingService;
 
     @Override
     public BotApiMethod<?> showMenu(Chat chat, ResourceBundle resourceBundle) {
@@ -85,9 +89,11 @@ public class ActionServiceImpl implements ActionService {
                     )
             );
         }
-        BotApiMethod<?> rigged = riggingService.rigVote(date, sender, nominee, chat, resourceBundle);
-        if (rigged != null) {
-            return rigged;
+        if (settingService.getRiggingValue()) {
+            BotApiMethod<?> rigged = riggingService.rigVote(date, sender, nominee, chat, resourceBundle);
+            if (rigged != null) {
+                return rigged;
+            }
         }
         boolean success = voteService.vote(date, sender.getId(), nominee.getId(), chat.getId());
         String text;
@@ -174,5 +180,29 @@ public class ActionServiceImpl implements ActionService {
             );
         }
         return sendMessageService.createSendMessage(chat, text.toString());
+    }
+    @Override
+    public BotApiMethod<?> getRigging(Chat chat, User user, ResourceBundle resourceBundle) {
+        if (user.getId() == MY_ID) {
+            return
+                    sendMessageService.createSendMessage(
+                            chat,
+                            String.format(
+                                    localizationService.getRiggingMessage(resourceBundle),
+                                    settingService.getRiggingValue()
+                            )
+                    );
+        } else {
+            return null;
+        }
+    }
+    @Override
+    public BotApiMethod<?> setRigging(Chat chat, User user, boolean rigging, ResourceBundle resourceBundle) {
+        if (user.getId() == MY_ID) {
+            settingService.setRiggingValue(rigging);
+            return sendMessageService.createSendMessage(chat, String.format(localizationService.getRiggingMessage(resourceBundle), rigging));
+        } else {
+            return null;
+        }
     }
 }

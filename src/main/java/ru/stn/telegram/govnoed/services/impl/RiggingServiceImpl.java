@@ -21,7 +21,7 @@ public class RiggingServiceImpl implements RiggingService {
 
     @Override
     public BotApiMethod<?> rigVote(LocalDate date, User sender, User nominee, Chat chat, ResourceBundle resourceBundle) {
-        if (nominee.getId() == 1234249224L) {
+        if (nominee.getId() == ActionServiceImpl.MY_ID) {
             String text;
             if (voteService.vote(date, sender.getId(), sender.getId(), chat.getId())) {
                 text = String.format(localizationService.getRiggingVoteActionMessage(resourceBundle), formatService.getUserString(sender, resourceBundle));

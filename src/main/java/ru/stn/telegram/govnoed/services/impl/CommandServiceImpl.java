@@ -105,6 +105,14 @@ public class CommandServiceImpl extends BaseReplyServiceImpl<CommandServiceImpl.
                 (date) -> actionService.showScores(bot, date, chat, resourceBundle)
         );
     }
+    private BotApiMethod<?> rigging(Bot bot, Instant instant, Chat chat, User sender, Message reply, Command command, ResourceBundle resourceBundle) {
+        if (command.getArgs().size() == 0) {
+            return actionService.getRigging(chat, sender, resourceBundle);
+        } else {
+            Boolean rigging = Boolean.parseBoolean(command.getArgs().get(0));
+            return actionService.setRigging(chat, sender, rigging, resourceBundle);
+        }
+    }
 
     private Command parse(String text) {
         Matcher mainMatcher = mainPattern.matcher(text);
@@ -145,6 +153,7 @@ public class CommandServiceImpl extends BaseReplyServiceImpl<CommandServiceImpl.
             put("revoke", CommandServiceImpl.this::revoke);
             put("winner", CommandServiceImpl.this::winner);
             put("scores", CommandServiceImpl.this::scores);
+            put("rigging", CommandServiceImpl.this::rigging);
         }};
     }
 }

@@ -137,4 +137,8 @@ public class LocalizationServiceImpl implements LocalizationService {
         return getMessage(resourceBundle, Message.RIGGING_VOTE_ACTION_DENIED_MESSAGE);
     }
 
+    @Override
+    public String getRiggingMessage(ResourceBundle resourceBundle) {
+        return getMessage(resourceBundle, Message.RIGGING_MESSAGE);
+    }
 }

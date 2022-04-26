@@ -21,4 +21,6 @@ public interface ActionService {
     BotApiMethod<?> revoke(LocalDate date, Chat chat, User sender, ResourceBundle resourceBundle);
     BotApiMethod<?> showWinners(Bot bot, LocalDate date, Chat chat, ResourceBundle resourceBundle);
     BotApiMethod<?> showScores(Bot bot, LocalDate date, Chat chat, ResourceBundle resourceBundle);
+    BotApiMethod<?> getRigging(Chat chat, User user, ResourceBundle resourceBundle);
+    BotApiMethod<?> setRigging(Chat chat, User user, boolean rigging, ResourceBundle resourceBundle);
 }
