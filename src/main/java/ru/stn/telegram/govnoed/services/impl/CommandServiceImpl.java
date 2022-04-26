@@ -38,6 +38,7 @@ public class CommandServiceImpl extends BaseReplyServiceImpl<CommandServiceImpl.
     private final ChatService chatService;
     private final ActionService actionService;
     private final FormatService formatService;
+    private final SendMessageService sendMessageService;
     private final LocalizationService localizationService;
 
     private final Pattern mainPattern = Pattern.compile("^ */(?<name>[A-Za-z0-9_]+)(@(?<bot>[A-Za-z0-9_]+))?(?<args>( +([^ ]+))+)? *$");
@@ -53,7 +54,7 @@ public class CommandServiceImpl extends BaseReplyServiceImpl<CommandServiceImpl.
     private BotApiMethod<?> runFuncWithDateArg(LocalDate date, Chat chat, Command command, ResourceBundle resourceBundle, Function<LocalDate, BotApiMethod<?>> func) {
         date = getDateWithArgs(date, command.getArgs());
         if (date == null) {
-            return actionService.createSendMessage(chat, String.format(localizationService.getUnableToRecognizeDateMessage(resourceBundle), command.getArgs().get(0)));
+            return sendMessageService.createSendMessage(chat, String.format(localizationService.getUnableToRecognizeDateMessage(resourceBundle), command.getArgs().get(0)));
         }
         return func.apply(date);
     }
@@ -89,7 +90,7 @@ public class CommandServiceImpl extends BaseReplyServiceImpl<CommandServiceImpl.
                 date -> {
                     LocalDate now = Instant.now().atZone(chatService.getTimezoneById(chat.getId())).toLocalDate();
                     if (!date.isBefore(now)) {
-                        return actionService.createSendMessage(chat, localizationService.getInvalidWinnerDateMessage(resourceBundle));
+                        return sendMessageService.createSendMessage(chat, localizationService.getInvalidWinnerDateMessage(resourceBundle));
                     }
                     return actionService.showWinners(bot, date, chat, resourceBundle);
                 }

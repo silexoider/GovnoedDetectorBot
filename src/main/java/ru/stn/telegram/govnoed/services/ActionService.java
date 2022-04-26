@@ -13,8 +13,6 @@ import java.time.LocalDate;
 import java.util.ResourceBundle;
 
 public interface ActionService {
-    SendMessage createSendMessage(Chat chat, String text);
-
     BotApiMethod<?> showMenu(Chat chat, ResourceBundle resourceBundle);
     BotApiMethod<?> showTimezone(Chat chat, ResourceBundle resourceBundle);
     BotApiMethod<?> setTimezone(Bot bot, Chat chat, User sender, String text, ResourceBundle resourceBundle);

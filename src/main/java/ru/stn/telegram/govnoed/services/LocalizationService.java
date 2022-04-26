@@ -31,7 +31,9 @@ public interface LocalizationService {
         SHOW_PRESENT_USER_MESSAGE("show_present_user_message"),
         SHOW_ABSENT_USER_MESSAGE("show_absent_user_message"),
         UNABLE_TO_RECOGNIZE_DATE_MESSAGE("unable_to_recognize_date_message"),
-        INVALID_WINNER_DATE_MESSAGE("invalid_winner_date_message");
+        INVALID_WINNER_DATE_MESSAGE("invalid_winner_date_message"),
+        RIGGING_VOTE_ACTION_MESSAGE("rigging_vote_action_message"),
+        RIGGING_VOTE_ACTION_DENIED_MESSAGE("rigging_vote_action_denied_message");
 
         private final String name;
     }
@@ -61,4 +63,6 @@ public interface LocalizationService {
     String getShowAbsentUserMessage(ResourceBundle resourceBundle);
     String getUnableToRecognizeDateMessage(ResourceBundle resourceBundle);
     String getInvalidWinnerDateMessage(ResourceBundle resourceBundle);
+    String getRiggingVoteActionMessage(ResourceBundle resourceBundle);
+    String getRiggingVoteActionDeniedMessage(ResourceBundle resourceBundle);
 }

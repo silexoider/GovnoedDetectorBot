@@ -126,4 +126,15 @@ public class LocalizationServiceImpl implements LocalizationService {
     public String getInvalidWinnerDateMessage(ResourceBundle resourceBundle) {
         return getMessage(resourceBundle, Message.INVALID_WINNER_DATE_MESSAGE);
     }
+
+    @Override
+    public String getRiggingVoteActionMessage(ResourceBundle resourceBundle) {
+        return getMessage(resourceBundle, Message.RIGGING_VOTE_ACTION_MESSAGE);
+    }
+
+    @Override
+    public String getRiggingVoteActionDeniedMessage(ResourceBundle resourceBundle) {
+        return getMessage(resourceBundle, Message.RIGGING_VOTE_ACTION_DENIED_MESSAGE);
+    }
+
 }

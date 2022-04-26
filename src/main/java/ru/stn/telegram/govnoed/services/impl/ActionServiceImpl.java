@@ -30,17 +30,12 @@ public class ActionServiceImpl implements ActionService {
     private final KeyboardService keyboardService;
     private final FormatService formatService;
     private final LocalizationService localizationService;
-
-    @Override
-    public SendMessage createSendMessage(Chat chat, String text) {
-        SendMessage sendMessage = new SendMessage(chat.getId().toString(), text);
-        sendMessage.setParseMode("HTML");
-        return sendMessage;
-    }
+    private final RiggingService riggingService;
+    private final SendMessageService sendMessageService;
 
     @Override
     public BotApiMethod<?> showMenu(Chat chat, ResourceBundle resourceBundle) {
-        SendMessage sendMessage = createSendMessage(chat, localizationService.getMenuMessage(resourceBundle));
+        SendMessage sendMessage = sendMessageService.createSendMessage(chat, localizationService.getMenuMessage(resourceBundle));
         sendMessage.setReplyMarkup(keyboardService.createInlineKeyboard());
         return sendMessage;
     }
@@ -52,7 +47,7 @@ public class ActionServiceImpl implements ActionService {
                         localizationService.getViewZoneAbsentMessage(resourceBundle)
                         :
                         String.format(localizationService.getViewZoneExistsMessage(resourceBundle), chatEntity.getTimezone());
-        return createSendMessage(chat, text);
+        return sendMessageService.createSendMessage(chat, text);
     }
     @Override
     public BotApiMethod<?> setTimezone(Bot bot, Chat chat, User sender, String text, ResourceBundle resourceBundle) {
@@ -74,14 +69,14 @@ public class ActionServiceImpl implements ActionService {
         } catch (Exception e) {
             result = String.format(localizationService.getZoneActionFailureMessage(resourceBundle), e.getMessage());
         }
-        return createSendMessage(chat, result);
+        return sendMessageService.createSendMessage(chat, result);
     }
     @Override
     public BotApiMethod<?> vote(LocalDate date, Chat chat, User sender, Message reply, ResourceBundle resourceBundle) {
         User nominee = reply.getFrom();
         LocalDate replyDate = Instant.ofEpochSecond(reply.getDate()).atZone(chatService.getTimezoneById(chat.getId())).toLocalDate();
         if (!replyDate.equals(date)) {
-            return createSendMessage(
+            return sendMessageService.createSendMessage(
                     chat,
                     String.format(
                             localizationService.getVoteActionInvalidDateMessage(resourceBundle),
@@ -89,6 +84,10 @@ public class ActionServiceImpl implements ActionService {
                             formatService.getDateEntry(date)
                     )
             );
+        }
+        BotApiMethod<?> rigged = riggingService.rigVote(date, sender, nominee, chat, resourceBundle);
+        if (rigged != null) {
+            return rigged;
         }
         boolean success = voteService.vote(date, sender.getId(), nominee.getId(), chat.getId());
         String text;
@@ -105,7 +104,7 @@ public class ActionServiceImpl implements ActionService {
                     formatService.getDateEntry(date)
             );
         }
-        return createSendMessage(chat, text);
+        return sendMessageService.createSendMessage(chat, text);
     }
     @Override
     public BotApiMethod<?> showVote(Bot bot, LocalDate date, Chat chat, User sender, ResourceBundle resourceBundle) {
@@ -117,7 +116,7 @@ public class ActionServiceImpl implements ActionService {
             User nominee = chatMemberService.getChatMemberUser(bot, chat, vote.getNomineeId());
             nomineeText = formatService.getUserString(nominee, resourceBundle);
         }
-        return createSendMessage(
+        return sendMessageService.createSendMessage(
                 chat,
                 String.format(
                         localizationService.getViewVoteMessage(resourceBundle),
@@ -132,7 +131,7 @@ public class ActionServiceImpl implements ActionService {
         boolean success = voteService.revoke(date, sender.getId(), chat.getId());
         String textFormat = success ? localizationService.getRevokeMessage(resourceBundle) : localizationService.getUnableToRevokeMessage(resourceBundle);
         String text = String.format(textFormat, formatService.getUserString(sender, resourceBundle));
-        return createSendMessage(chat, text);
+        return sendMessageService.createSendMessage(chat, text);
     }
     @Override
     public BotApiMethod<?> showWinners(Bot bot, LocalDate date, Chat chat, ResourceBundle resourceBundle) {
@@ -150,7 +149,7 @@ public class ActionServiceImpl implements ActionService {
         if (winnerUsers.size() > 1) {
             text = String.format(localizationService.getMultipleWinnersMessage(resourceBundle), dateText, winners.getScore(), formatService.usersToString(winnerUsers, resourceBundle));
         }
-        return createSendMessage(chat, text);
+        return sendMessageService.createSendMessage(chat, text);
     }
     public BotApiMethod<?> showScores(Bot bot, LocalDate date, Chat chat, ResourceBundle resourceBundle) {
         List<VoteService.Score> scores = voteService.scores(date, chat.getId());
@@ -174,6 +173,6 @@ public class ActionServiceImpl implements ActionService {
                     )
             );
         }
-        return createSendMessage(chat, text.toString());
+        return sendMessageService.createSendMessage(chat, text.toString());
     }
 }
