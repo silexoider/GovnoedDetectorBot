@@ -9,7 +9,6 @@ import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
-import ru.stn.telegram.govnoed.config.TelegramConfig;
 import ru.stn.telegram.govnoed.services.*;
 
 import java.time.Instant;
@@ -20,7 +19,7 @@ import java.util.ResourceBundle;
 @Component
 @RequiredArgsConstructor
 public class Bot extends TelegramLongPollingBot {
-    private final TelegramConfig config;
+    private final Config config;
     private final VoteService statEntryService;
     private final CommandService commandService;
     private final MessageService messageService;

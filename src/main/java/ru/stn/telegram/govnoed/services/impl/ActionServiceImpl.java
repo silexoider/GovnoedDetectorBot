@@ -1,7 +1,6 @@
 package ru.stn.telegram.govnoed.services.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.web.ConditionalOnEnabledResourceChain;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember;

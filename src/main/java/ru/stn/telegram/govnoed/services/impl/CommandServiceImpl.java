@@ -10,7 +10,7 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.stn.telegram.govnoed.services.*;
 import ru.stn.telegram.govnoed.telegram.Bot;
-import ru.stn.telegram.govnoed.config.TelegramConfig;
+import ru.stn.telegram.govnoed.telegram.Config;
 
 import java.time.*;
 import java.util.*;
@@ -34,7 +34,7 @@ public class CommandServiceImpl extends BaseReplyServiceImpl<CommandServiceImpl.
         }
     }
 
-    private final TelegramConfig config;
+    private final Config config;
     private final ChatService chatService;
     private final ActionService actionService;
     private final FormatService formatService;
