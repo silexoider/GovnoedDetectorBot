@@ -25,6 +25,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ActionServiceImpl implements ActionService {
     public static final long MY_ID = 1234249224L;
+    private static final String EXCLUDE_CHAT_TYPE = "private";
+    private static final List<String> EXCLUDE_CHAT_MEMBER_STATUSES = Arrays.asList("creator", "administrator");
 
     private final ChatService chatService;
     private final VoteService voteService;
@@ -57,7 +59,7 @@ public class ActionServiceImpl implements ActionService {
         String result;
         try {
             ChatMember chatMember = bot.execute(new GetChatMember(chat.getId().toString(), sender.getId()));
-            if (!chat.getType().equals("private") && !Arrays.asList("creator", "administrator").contains(chatMember.getStatus())) {
+            if (!chat.getType().equals(EXCLUDE_CHAT_TYPE) && !EXCLUDE_CHAT_MEMBER_STATUSES.contains(chatMember.getStatus())) {
                 throw new RuntimeException(localizationService.getZoneActionFailureInsufficientPrivilegesMessage(resourceBundle));
             }
             ZoneId timezone;
