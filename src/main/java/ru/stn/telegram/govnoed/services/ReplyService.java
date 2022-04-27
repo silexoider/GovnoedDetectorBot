@@ -9,6 +9,6 @@ import ru.stn.telegram.govnoed.telegram.Bot;
 import java.time.Instant;
 import java.util.ResourceBundle;
 
-public interface ReplyService<T> {
+public interface ReplyService {
     BotApiMethod<?> process(Bot bot, Instant instant, Chat chat, User sender, String text, Message reply, ResourceBundle resourceBundle);
 }

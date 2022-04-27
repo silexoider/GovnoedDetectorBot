@@ -1,11 +1,15 @@
 package ru.stn.telegram.govnoed.services.impl;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.User;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import ru.stn.telegram.govnoed.handling.ListHandler;
 import ru.stn.telegram.govnoed.services.ActionService;
 import ru.stn.telegram.govnoed.services.ChatService;
 import ru.stn.telegram.govnoed.services.MessageService;
@@ -14,20 +18,35 @@ import ru.stn.telegram.govnoed.telegram.Bot;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
-public class MessageServiceImpl extends BaseReplyServiceImpl<MessageServiceImpl.Entry> implements MessageService {
-    @RequiredArgsConstructor
-    public static class Entry implements BaseReplyServiceImpl.Entry {
-        private final String value;
+public class MessageServiceImpl extends ListHandler<String, MessageServiceImpl.Args, BotApiMethod<?>> implements MessageService {
+    @FunctionalInterface
+    protected interface EntryFunction {
+        BotApiMethod<?> apply(Bot bot, Instant instant, Chat chat, User sender, Message reply, ResourceBundle resourceBundle) throws TelegramApiException;
+    }
 
-        @Override
-        public String getKey() {
-            return value;
-        }
+    @Getter
+    @RequiredArgsConstructor
+    private static class Entry {
+        private final Function<String, Boolean> filter;
+        private final BiFunction<String, Args, BotApiMethod<?>> action;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static class Args {
+        private Bot bot;
+        private Instant instant;
+        private Chat chat;
+        private User sender;
+        private Message reply;
+        private ResourceBundle resourceBundle;
     }
 
     private final ChatService chatService;
@@ -35,7 +54,39 @@ public class MessageServiceImpl extends BaseReplyServiceImpl<MessageServiceImpl.
 
     private final Pattern pattern = Pattern.compile("[A-Za-zА-ЯЁа-яё]+");
 
-    private BotApiMethod<?> common(Bot bot, Instant instant, Chat chat, User sender, Message reply, MessageServiceImpl.Entry entry, ResourceBundle resourceBundle) {
+    private final List<Entry> entries = Arrays.asList(
+            new Entry(this::voteFilter, normalize(this::voteAction))
+    );
+
+    private static BiFunction<String, Args, BotApiMethod<?>> normalize(EntryFunction function) {
+        return
+                (k, a) -> {
+                    try {
+                        return function.apply(a.getBot(), a.getInstant(), a.getChat(), a.getSender(), a.getReply(), a.getResourceBundle());
+                    } catch (TelegramApiException e) {
+                        throw new RuntimeException(e);
+                    }
+                };
+    }
+
+    public MessageServiceImpl(
+            ChatService chatService,
+            ActionService actionService
+    ) {
+        init(entries.stream().map(e -> new AbstractMap.SimpleEntry<>(e.getFilter(), e.getAction())).collect(Collectors.toList()));
+        this.chatService = chatService;
+        this.actionService = actionService;
+    }
+
+    private boolean voteFilter(String text) {
+        List<String> words = new LinkedList<>();
+        Matcher matcher = pattern.matcher(text);
+        while (matcher.find()) {
+            words.add(matcher.group().toUpperCase());
+        }
+        return words.stream().map(String::toUpperCase).filter(w -> w.equals("ГОВНОЕД")).count() > 0;
+    }
+    private BotApiMethod<?> voteAction(Bot bot, Instant instant, Chat chat, User sender, Message reply, ResourceBundle resourceBundle) {
         if (reply == null) {
             return null;
         }
@@ -44,21 +95,7 @@ public class MessageServiceImpl extends BaseReplyServiceImpl<MessageServiceImpl.
     }
 
     @Override
-    protected Entry convertTextToEntry(String text) {
-        List<String> words = new LinkedList<>();
-        Matcher matcher = pattern.matcher(text);
-        while (matcher.find()) {
-            words.add(matcher.group().toUpperCase());
-        }
-        return new Entry(words.stream().reduce("", (subtotal, element) -> subtotal == "" ? element : String.format("%s %s", subtotal, element)));
-    }
-
-    @Override
-    protected Map<String, EntryFunction<Entry>> createEntryHandlers() {
-        return new HashMap<String, EntryFunction<MessageServiceImpl.Entry>>() {{
-            put("ГОВНОЕД", MessageServiceImpl.this::common);
-            put("ТЫ ГОВНОЕД", MessageServiceImpl.this::common);
-            put("ГОВНОЕД ТЫ", MessageServiceImpl.this::common);
-        }};
+    public BotApiMethod<?> process(Bot bot, Instant instant, Chat chat, User sender, String text, Message reply, ResourceBundle resourceBundle) {
+        return handle(text, new Args(bot, instant, chat, sender, reply, resourceBundle));
     }
 }
