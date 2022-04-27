@@ -52,7 +52,7 @@ public class MessageServiceImpl extends ListHandler<String, MessageServiceImpl.A
     private final ChatService chatService;
     private final ActionService actionService;
 
-    private final Pattern pattern = Pattern.compile("[A-Za-zА-ЯЁа-яё]+");
+    private final Pattern pattern = Pattern.compile("\\bговноед(|[аеуы]|ов|ам|ом|ами|ах)\\b", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 
     private final List<Entry> entries = Arrays.asList(
             new Entry(this::voteFilter, normalize(this::voteAction))
@@ -79,12 +79,11 @@ public class MessageServiceImpl extends ListHandler<String, MessageServiceImpl.A
     }
 
     private boolean voteFilter(String text) {
-        List<String> words = new LinkedList<>();
         Matcher matcher = pattern.matcher(text);
-        while (matcher.find()) {
-            words.add(matcher.group().toUpperCase());
+        if (matcher.find()) {
+            return true;
         }
-        return words.stream().map(String::toUpperCase).filter(w -> w.equals("ГОВНОЕД")).count() > 0;
+        return false;
     }
     private BotApiMethod<?> voteAction(Bot bot, Instant instant, Chat chat, User sender, Message reply, ResourceBundle resourceBundle) {
         if (reply == null) {
