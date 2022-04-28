@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -28,7 +29,7 @@ public class Bot extends TelegramLongPollingBot {
 
     void log(String type, Instant instant, Chat chat, User sender, String text, Message reply, Locale locale) {
         System.out.printf(
-                "{type: %s, instant: %s, chat: %s, sender: %s, text: %s, reply: %s, locale: %s}%n",
+                "IN {type: %s, instant: %s, chat: %s, sender: %s, text: %s, reply: %s, locale: %s}%n",
                 type,
                 formatService.getInstantLogEntry(instant),
                 formatService.getChatLogEntry(chat),
@@ -36,6 +37,20 @@ public class Bot extends TelegramLongPollingBot {
                 text,
                 formatService.getMessageLogEntry(reply),
                 formatService.getLocaleLogEntry(locale)
+        );
+    }
+    void log(BotApiMethod<?> method) {
+        String text = "";
+        String type = "unknown";
+        if (method instanceof SendMessage) {
+            SendMessage sendMessage = (SendMessage)method;
+            type = "SendMessage";
+            text = String.format("chatId: %s; text: %s", sendMessage.getChatId(), sendMessage.getText());
+        }
+        System.out.printf(
+                "OUT {type: %s; %s}%n",
+                type,
+                text
         );
     }
 
@@ -85,6 +100,7 @@ public class Bot extends TelegramLongPollingBot {
                 BotApiMethod<?> method = coalesce(instant, chat, sender, text, reply, resourceBundle, commandService, messageService);
                 if (method != null) {
                     execute(method);
+                    log(method);
                 }
             }
         } catch (Exception e) {
