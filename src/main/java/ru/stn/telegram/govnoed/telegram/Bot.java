@@ -79,7 +79,7 @@ public class Bot extends TelegramLongPollingBot {
                 text = update.getCallbackQuery().getData();
                 instant = Instant.now();
             }
-            if (found) {
+            if (found && text != null) {
                 log(type, instant, chat, sender, text, reply, locale);
                 ResourceBundle resourceBundle = locale == null ? ResourceBundle.getBundle("messages") : ResourceBundle.getBundle("messages", locale);
                 BotApiMethod<?> method = coalesce(instant, chat, sender, text, reply, resourceBundle, commandService, messageService);
