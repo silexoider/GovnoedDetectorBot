@@ -1,9 +1,9 @@
 package ru.stn.telegram.govnoed.services;
 
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+
+import java.util.ResourceBundle;
 
 public interface KeyboardService {
-    ReplyKeyboardMarkup createReplyKeyboard();
-    InlineKeyboardMarkup createInlineKeyboard();
+    InlineKeyboardMarkup createInlineKeyboard(ResourceBundle resourceBundle);
 }

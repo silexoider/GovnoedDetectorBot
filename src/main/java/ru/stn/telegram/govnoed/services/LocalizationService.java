@@ -34,7 +34,12 @@ public interface LocalizationService {
         INVALID_WINNER_DATE_MESSAGE("invalid_winner_date_message"),
         RIGGING_VOTE_ACTION_MESSAGE("rigging_vote_action_message"),
         RIGGING_VOTE_ACTION_DENIED_MESSAGE("rigging_vote_action_denied_message"),
-        RIGGING_MESSAGE("rigging_message");
+        RIGGING_MESSAGE("rigging_message"),
+        MENU_BUTTON_MESSAGE("menu_button_message"),
+        VOTE_BUTTON_MESSAGE("vote_button_message"),
+        REVOKE_BUTTON_MESSAGE("revoke_button_message"),
+        WINNER_BUTTON_MESSAGE("winner_button_message"),
+        SCORES_BUTTON_MESSAGE("scores_button_message");
 
         private final String name;
     }
@@ -67,4 +72,9 @@ public interface LocalizationService {
     String getRiggingVoteActionMessage(ResourceBundle resourceBundle);
     String getRiggingVoteActionDeniedMessage(ResourceBundle resourceBundle);
     String getRiggingMessage(ResourceBundle resourceBundle);
+    String getMenuButtonMessage(ResourceBundle resourceBundle);
+    String getVoteButtonMessage(ResourceBundle resourceBundle);
+    String getRevokeButtonMessage(ResourceBundle resourceBundle);
+    String getWinnerButtonMessage(ResourceBundle resourceBundle);
+    String getScoresButtonMessage(ResourceBundle resourceBundle);
 }

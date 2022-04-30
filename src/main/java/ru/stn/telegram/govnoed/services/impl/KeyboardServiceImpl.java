@@ -1,5 +1,6 @@
 package ru.stn.telegram.govnoed.services.impl;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
@@ -7,35 +8,28 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import ru.stn.telegram.govnoed.services.KeyboardService;
+import ru.stn.telegram.govnoed.services.LocalizationService;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.ResourceBundle;
 
 @Service
+@RequiredArgsConstructor
 public class KeyboardServiceImpl implements KeyboardService {
-    @Override
-    public ReplyKeyboardMarkup createReplyKeyboard() {
-        List<KeyboardRow> rows = Arrays.asList(
-                new KeyboardRow(
-                        Arrays.asList(
-                                new KeyboardButton("Button2")
-                        )
-                )
-        );
-        return new ReplyKeyboardMarkup(rows);
-    }
+    private final LocalizationService localizationService;
 
     @Override
-    public InlineKeyboardMarkup createInlineKeyboard() {
+    public InlineKeyboardMarkup createInlineKeyboard(ResourceBundle resourceBundle) {
         List<List<InlineKeyboardButton>> rows = Arrays.asList(
                 Arrays.asList(
-                        createInlineKeyboardButton("Меню", "/menu"),
-                        createInlineKeyboardButton("Победитель", "/winner"),
-                        createInlineKeyboardButton("Таблица", "/scores")
+                        createInlineKeyboardButton(localizationService.getMenuButtonMessage(resourceBundle), "/menu"),
+                        createInlineKeyboardButton(localizationService.getWinnerButtonMessage(resourceBundle), "/winner"),
+                        createInlineKeyboardButton(localizationService.getScoresButtonMessage(resourceBundle), "/scores")
                 ),
                 Arrays.asList(
-                        createInlineKeyboardButton("Мой голос", "/vote"),
-                        createInlineKeyboardButton("Отозвать голос", "/revoke")
+                        createInlineKeyboardButton(localizationService.getVoteButtonMessage(resourceBundle), "/vote"),
+                        createInlineKeyboardButton(localizationService.getRevokeButtonMessage(resourceBundle), "/revoke")
                 )
         );
         return new InlineKeyboardMarkup(rows);

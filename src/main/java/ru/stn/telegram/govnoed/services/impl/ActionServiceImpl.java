@@ -41,7 +41,7 @@ public class ActionServiceImpl implements ActionService {
     @Override
     public BotApiMethod<?> showMenu(Chat chat, ResourceBundle resourceBundle) {
         SendMessage sendMessage = sendMessageService.createSendMessage(chat, localizationService.getMenuMessage(resourceBundle));
-        sendMessage.setReplyMarkup(keyboardService.createInlineKeyboard());
+        sendMessage.setReplyMarkup(keyboardService.createInlineKeyboard(resourceBundle));
         return sendMessage;
     }
     @Override

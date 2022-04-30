@@ -141,4 +141,29 @@ public class LocalizationServiceImpl implements LocalizationService {
     public String getRiggingMessage(ResourceBundle resourceBundle) {
         return getMessage(resourceBundle, Message.RIGGING_MESSAGE);
     }
+
+    @Override
+    public String getMenuButtonMessage(ResourceBundle resourceBundle) {
+        return getMessage(resourceBundle, Message.MENU_BUTTON_MESSAGE);
+    }
+
+    @Override
+    public String getVoteButtonMessage(ResourceBundle resourceBundle) {
+        return getMessage(resourceBundle, Message.VOTE_BUTTON_MESSAGE);
+    }
+
+    @Override
+    public String getRevokeButtonMessage(ResourceBundle resourceBundle) {
+        return getMessage(resourceBundle, Message.REVOKE_BUTTON_MESSAGE);
+    }
+
+    @Override
+    public String getWinnerButtonMessage(ResourceBundle resourceBundle) {
+        return getMessage(resourceBundle, Message.WINNER_BUTTON_MESSAGE);
+    }
+
+    @Override
+    public String getScoresButtonMessage(ResourceBundle resourceBundle) {
+        return getMessage(resourceBundle, Message.SCORES_BUTTON_MESSAGE);
+    }
 }
